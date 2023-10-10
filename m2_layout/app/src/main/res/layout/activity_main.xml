@@ -7,41 +7,6 @@
     android:padding="16dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/topString"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="106dp"
-        android:layout_marginTop="32dp"
-        android:ellipsize="end"
-        android:lines="1"
-        android:text="@tools:sample/lorem/random"
-        />
-
-    <TextView
-        android:id="@+id/bottomString"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="106dp"
-        android:layout_marginTop="60dp"
-        android:ellipsize="end"
-        android:lines="1"
-        android:text="@tools:sample/lorem/random"
-        />
-
-    <TextView
-        android:id="@+id/blackSquare"
-        android:layout_width="90dp"
-        android:layout_height="90dp"
-        android:background="@android:color/black" />
-
-    <TextView
-        android:id="@+id/graySquare"
-        android:layout_width="match_parent"
-        android:layout_height="225dp"
-        android:layout_marginTop="106dp"
-        android:background="@android:color/darker_gray" />
-
     <com.example.m2_layout.CustomView
         android:id="@+id/custom_view"
         android:layout_width="match_parent"
