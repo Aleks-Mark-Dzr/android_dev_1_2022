@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/default_margin"
+    tools:context=".MainActivity"
+    tools:ignore="UseSwitchCompatOrMaterialXml">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/cat_jey"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteY="76dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/nameInputLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/name"
+        app:counterEnabled="true"
+        app:counterMaxLength="40"
+        app:endIconMode="clear_text"
+        app:errorEnabled="true"
+        app:layout_constraintTop_toBottomOf="@id/imageView"
+        tools:layout_editor_absoluteX="20dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/nameText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/phoneTextViewLayout"
+        style="@style/Widget.Material3.TextInputLayout.FilledBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/purple_200"
+        app:layout_constraintTop_toBottomOf="@id/nameInputLayout">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/phoneTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/phoneNumber"
+            android:inputType="phone" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/genderTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/gender"
+        android:textSize="@dimen/button_text_size"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/phoneTextViewLayout" />
+
+    <RadioGroup
+        android:id="@+id/genderRadioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/genderTextView"
+        tools:ignore="MissingConstraints">
+
+        <RadioButton
+            android:id="@+id/maleRadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/male"
+            tools:ignore="MissingConstraints" />
+
+        <RadioButton
+            android:id="@+id/femaleRadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/female"
+            tools:ignore="MissingConstraints" />
+    </RadioGroup>
+
+    <Switch
+        android:id="@+id/reciveNotificationSwitch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/reciveNotification"
+        android:textSize="@dimen/button_text_size"
+        android:background="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/genderRadioGroup"
+        android:thumbTint="@color/purple_700"
+        android:trackTint="@color/purple_100" />
+
+    <CheckBox
+        android:id="@+id/aboutAuthorizationOnDeviceCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:buttonTint="@color/teal_200"
+        android:text="@string/aboutAuthorizationOnDevice"
+        app:layout_constraintTop_toBottomOf="@id/reciveNotificationSwitch"
+        tools:ignore="MissingConstraints" />
+
+    <CheckBox
+        android:id="@+id/aboutNewProductsAndOffersCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:buttonTint="@color/teal_200"
+        android:text="@string/aboutNewProductsAndOffers"
+        app:layout_constraintTop_toBottomOf="@id/aboutAuthorizationOnDeviceCheckBox"
+        tools:ignore="MissingConstraints" />
+
+    <LinearLayout
+        android:id="@+id/pointsTextViewLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/aboutNewProductsAndOffersCheckBox">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/pointsTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:counterEnabled="false"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/pointsText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:text="@string/points" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/charCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/grey"
+            android:text="@string/pointsCounter" />
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:progress="50"
+        app:indicatorColor="@color/purple_500"
+        app:layout_constraintTop_toBottomOf="@id/pointsTextViewLinearLayout"
+        app:trackColor="@color/purple_100"
+        tools:ignore="MissingConstraints,NotSibling" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/saveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/purple_700"
+        android:text="@string/saveButton"
+        app:cornerRadius="20dp"
+        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        tools:ignore="MissingConstraints" />
+</androidx.constraintlayout.widget.ConstraintLayout>

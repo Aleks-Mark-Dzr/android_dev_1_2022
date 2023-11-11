@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">m4_components</string>
+    <string name="name">Имя</string>
+    <string name="phoneNumber">Телефон</string>
+    <string name="gender">Пол</string>
+    <string name="male">М</string>
+    <string name="female">Ж</string>
+    <string name="reciveNotification">Получать уведомления</string>
+    <string name="aboutAuthorizationOnDevice">Об авторизации на устройстве</string>
+    <string name="aboutNewProductsAndOffers">О новинках и предложениях</string>
+    <string name="points">Баллы</string>
+    <string name="saveButton">Сохранить</string>
+    <string name="nameLetterCounter">00/40</string>
+    <string name="pointsCounter">00/100</string>
+
+</resources>
