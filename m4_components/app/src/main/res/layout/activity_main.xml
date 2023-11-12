@@ -61,8 +61,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/gender"
-        android:textSize="@dimen/button_text_size"
         android:textColor="@color/black"
+        android:textSize="@dimen/button_text_size"
         app:layout_constraintTop_toBottomOf="@id/phoneTextViewLayout" />
 
     <RadioGroup
@@ -88,18 +88,18 @@
             tools:ignore="MissingConstraints" />
     </RadioGroup>
 
-    <Switch
+    <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/reciveNotificationSwitch"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:checked="true"
+        android:background="@color/white"
+        android:checked="false"
         android:text="@string/reciveNotification"
         android:textSize="@dimen/button_text_size"
-        android:background="@color/white"
+        app:thumbTint="@color/purple_700"
+        app:trackTint="@color/purple_100"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/genderRadioGroup"
-        android:thumbTint="@color/purple_700"
-        android:trackTint="@color/purple_100" />
+        app:layout_constraintTop_toBottomOf="@id/genderRadioGroup" />
 
     <CheckBox
         android:id="@+id/aboutAuthorizationOnDeviceCheckBox"
@@ -148,8 +148,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:textColor="@color/grey"
-            android:text="@string/pointsCounter" />
+            android:text="@string/pointsCounter"
+            android:textColor="@color/grey" />
     </LinearLayout>
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
