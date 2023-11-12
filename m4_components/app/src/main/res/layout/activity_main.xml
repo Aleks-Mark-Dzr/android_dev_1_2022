@@ -31,6 +31,7 @@
         app:endIconMode="clear_text"
         app:errorEnabled="true"
         app:layout_constraintTop_toBottomOf="@id/imageView"
+        android:textAppearance="@style/MyTextAppearance"
         tools:layout_editor_absoluteX="20dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -45,6 +46,7 @@
         style="@style/Widget.Material3.TextInputLayout.FilledBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textAppearance="@style/MyTextAppearance"
         android:background="@color/purple_200"
         app:layout_constraintTop_toBottomOf="@id/nameInputLayout">
 
@@ -61,8 +63,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/gender"
-        android:textColor="@color/black"
-        android:textSize="@dimen/button_text_size"
+        android:textAppearance="@style/MyTextAppearance"
         app:layout_constraintTop_toBottomOf="@id/phoneTextViewLayout" />
 
     <RadioGroup
@@ -70,6 +71,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
+        android:textAppearance="@style/MyTextAppearance"
         app:layout_constraintTop_toBottomOf="@id/genderTextView"
         tools:ignore="MissingConstraints">
 
@@ -95,7 +97,7 @@
         android:background="@color/white"
         android:checked="false"
         android:text="@string/reciveNotification"
-        android:textSize="@dimen/button_text_size"
+        android:textAppearance="@style/MyTextAppearance"
         app:thumbTint="@color/purple_700"
         app:trackTint="@color/purple_100"
         app:layout_constraintEnd_toEndOf="parent"
@@ -105,7 +107,8 @@
         android:id="@+id/aboutAuthorizationOnDeviceCheckBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:buttonTint="@color/teal_200"
+        android:buttonTint="@color/design_default_color_secondary"
+        android:textAppearance="@style/MyTextAppearance"
         android:text="@string/aboutAuthorizationOnDevice"
         app:layout_constraintTop_toBottomOf="@id/reciveNotificationSwitch"
         tools:ignore="MissingConstraints" />
@@ -114,7 +117,8 @@
         android:id="@+id/aboutNewProductsAndOffersCheckBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:buttonTint="@color/teal_200"
+        android:textAppearance="@style/MyTextAppearance"
+        android:buttonTint="@color/design_default_color_secondary"
         android:text="@string/aboutNewProductsAndOffers"
         app:layout_constraintTop_toBottomOf="@id/aboutAuthorizationOnDeviceCheckBox"
         tools:ignore="MissingConstraints" />
@@ -132,13 +136,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            app:counterEnabled="false"
+            app:counterEnabled="true"
             app:layout_constraintStart_toStartOf="parent">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/pointsText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textAppearance="@style/MyTextAppearance"
                 android:background="@color/white"
                 android:text="@string/points" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -167,6 +172,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:backgroundTint="@color/purple_700"
+        android:textAppearance="@style/MyTextAppearance"
         android:text="@string/saveButton"
         app:cornerRadius="20dp"
         app:layout_constraintTop_toBottomOf="@id/progressBar"
