@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.progress = Random.nextInt(101)
 
         binding.saveButton.setOnClickListener {
-            Toast.makeText(this, "Информация сщхранена", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Информация сохранена", Toast.LENGTH_SHORT).show()
         }
     }
 
