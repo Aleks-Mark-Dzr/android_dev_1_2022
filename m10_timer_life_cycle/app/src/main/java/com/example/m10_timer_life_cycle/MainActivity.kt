@@ -13,12 +13,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-//        savedInstanceState?.getString("SAVED_PERSON_DATA")?.let {
-//            binding.person.apply {
-//                text = it
-//                visibility = View.VISIBLE
-//            }
-//        }
+        savedInstanceState?.getString("SAVED_PERSON_DATA")?.let {
+            binding.person.apply {
+                text = it
+                visibility = View.VISIBLE
+            }
+        }
 
         val resultLauncher = registerForActivityResult(PersonContract()) { person ->
             person?.let {
@@ -40,8 +40,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-//    override fun onSaveInstanceState(outState: Bundle) {
-//        super.onSaveInstanceState(outState)
-//        outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
-//    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
+    }
 }
