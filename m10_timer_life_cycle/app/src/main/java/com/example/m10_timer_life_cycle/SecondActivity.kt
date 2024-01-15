@@ -3,6 +3,7 @@ package com.example.m10_timer_life_cycle
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -28,9 +29,35 @@ class SecondActivity : AppCompatActivity() {
             setResult(Activity.RESULT_OK, resultIntent)
             finish()
         }
+        Log.d("SecondActivityTest", "onCreate")
     }
 
     companion object {
         const val EXTRA_HAS_MIDDLE_NAME: String = "com.example.hasMiddleName"
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d("SecondActivityTest", "onStart")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("SecondActivityTest", "onResume")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("SecondActivityTest", "onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("SecondActivityTest", "onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("SecondActivityTest", "onDestroy")
     }
 }

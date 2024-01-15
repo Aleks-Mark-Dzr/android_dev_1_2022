@@ -3,6 +3,7 @@ package com.example.m10_timer_life_cycle
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import com.example.m10_timer_life_cycle.databinding.ActivityMainBinding
 
@@ -40,10 +41,35 @@ class MainActivity : AppCompatActivity() {
                 resultLauncher.launch(false)
             }
         }
-        
+        Log.d("MainActivityTest", "onCreate")
     }
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d("MainActivityTest", "onStart")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("MainActivityTest", "onResume")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("MainActivityTest", "onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("MainActivityTest", "onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("MainActivityTest", "onDestroy")
     }
 }
