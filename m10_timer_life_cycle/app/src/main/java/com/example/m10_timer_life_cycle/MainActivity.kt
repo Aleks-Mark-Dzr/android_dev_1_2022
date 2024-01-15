@@ -8,9 +8,10 @@ import com.example.m10_timer_life_cycle.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    val binding = ActivityMainBinding.inflate(layoutInflater)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         savedInstanceState?.getString("SAVED_PERSON_DATA")?.let {
@@ -39,9 +40,9 @@ class MainActivity : AppCompatActivity() {
                 resultLauncher.launch(false)
             }
         }
-    }
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
+        fun onSaveInstanceState(outState: Bundle) {
+            super.onSaveInstanceState(outState)
+            outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
+        }
     }
 }
