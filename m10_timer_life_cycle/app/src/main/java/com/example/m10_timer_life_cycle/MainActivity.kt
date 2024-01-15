@@ -7,11 +7,11 @@ import android.view.View
 import com.example.m10_timer_life_cycle.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         savedInstanceState?.getString("SAVED_PERSON_DATA")?.let {
@@ -40,9 +40,10 @@ class MainActivity : AppCompatActivity() {
                 resultLauncher.launch(false)
             }
         }
-        fun onSaveInstanceState(outState: Bundle) {
-            super.onSaveInstanceState(outState)
-            outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
-        }
+        
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("SAVED_PERSON_DATA", binding.person.text.toString())
     }
 }
