@@ -1,6 +1,5 @@
 package com.example.skillbox_hw_quiz.ui.main
 
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
 import android.util.TypedValue
 import androidx.fragment.app.Fragment
@@ -12,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.navigation.fragment.findNavController
 import com.example.skillbox_hw_quiz.R
 import com.example.skillbox_hw_quiz.databinding.MainFragmentBinding
@@ -29,29 +29,32 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val quiz = QuizStorage.getQuiz(QuizStorage.Locale.Ru) // Или QuizStorage.Locale.Ru в зависимости от локализации
+        val quiz = QuizStorage.getQuiz(QuizStorage.Locale.Ru) // Или QuizStorage.Locale.EN в зависимости от локализации
         addQuestions(quiz.questions)
         binding.backButton.setOnClickListener{
             findNavController().navigate(R.id.action_mainFragment_to_welcomeFragment)
         }
+
         binding.submitButton.setOnClickListener {
-            // Сбор выбранных ответов
             val selectedAnswers = mutableListOf<String>()
             for (i in 0 until binding.quizContainer.childCount) {
                 val view = binding.quizContainer.getChildAt(i)
                 if (view is RadioGroup) {
                     val radioButtonId = view.checkedRadioButtonId
-                    val radioButton = view.findViewById<RadioButton>(radioButtonId)
-                    selectedAnswers.add(radioButton.text.toString())
+                    if (radioButtonId != -1) { // Убедитесь, что ответ был выбран
+                        val radioButton = view.findViewById<RadioButton>(radioButtonId)
+                        selectedAnswers.add(radioButton.text.toString())
+                    } else {
+                        // Возможно, показать Toast, что не все вопросы были отвечены
+                        Toast.makeText(context, "Пожалуйста, ответьте на все вопросы", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
                 }
             }
-
-//            // Подсчет результатов с помощью QuizStorage.answer() или другой логики
-//            val result = QuizStorage.answer(selectedAnswers)
-//            // Передача результатов на экран "Результаты"
-//            val action = MainFragmentDirections.actionMainFragmentToResultFragment(result)
-//            findNavController().navigate(action)
-            findNavController().navigate(R.id.action_mainFragment_to_resultFragment)
+            // передача выбранных ответов как строки
+            val selectedAnswersString = selectedAnswers.joinToString(",")
+            val action = MainFragmentDirections.actionMainFragmentToResultFragment(quizResult = selectedAnswersString)
+            findNavController().navigate(action)
         }
     }
 

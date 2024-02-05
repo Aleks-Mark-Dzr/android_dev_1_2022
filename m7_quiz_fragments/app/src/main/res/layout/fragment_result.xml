@@ -7,7 +7,7 @@
     android:padding="16dp"
     tools:context=".ui.main.ResultFragment">
 
-    <com.google.android.material.textfield.TextInputLayout
+    <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/resultTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

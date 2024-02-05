@@ -19,7 +19,8 @@
         tools:layout="@layout/main_fragment" >
         <action
             android:id="@+id/action_mainFragment_to_resultFragment"
-            app:destination="@id/resultFragment" />
+            app:destination="@id/resultFragment"/>
+
         <action
             android:id="@+id/action_mainFragment_to_welcomeFragment"
             app:destination="@id/welcomeFragment" />
@@ -29,6 +30,7 @@
         android:name="com.example.skillbox_hw_quiz.ui.main.ResultFragment"
         android:label="fragment_result"
         tools:layout="@layout/fragment_result" >
+        <!--suppress NavigationFile -->
         <argument
             android:name="quizResult"
             app:argType="string" />

@@ -11,8 +11,7 @@ import com.example.skillbox_hw_quiz.databinding.FragmentResultBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+private const val ARG_QUIZ_RESULT = "quizResult"
 
 /**
  * A simple [Fragment] subclass.
@@ -25,17 +24,19 @@ class ResultFragment : Fragment() {
 
     private var _binding: FragmentResultBinding? = null
     private val binding get() = _binding!!
+    private var resultQuiz: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentResultBinding.inflate(inflater, container, false)
-        return binding.root
         arguments?.let {
-//            param1 = it.getString(ARG_PARAM1)
+            resultQuiz = it.getString(ARG_QUIZ_RESULT)
         }
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.resultTextView.text = resultQuiz
         binding.startAgainButton.setOnClickListener{
             findNavController().navigate(R.id.action_resultFragment_to_welcomeFragment)
         }
@@ -50,8 +51,7 @@ class ResultFragment : Fragment() {
         fun newInstance(param1: String, param2: String) =
             ResultFragment().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+                    putString(ARG_QUIZ_RESULT, param1)
                 }
             }
     }
