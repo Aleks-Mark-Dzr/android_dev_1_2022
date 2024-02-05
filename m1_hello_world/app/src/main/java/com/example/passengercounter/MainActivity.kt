@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.View
 import com.example.passengercounter.databinding.ActivityMainBinding
 
+private const val MAX_SEATS = 49
+
 class MainActivity : AppCompatActivity() {
     private var counter: Int = 0
 
@@ -12,6 +14,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        startCondition(binding)
 
         binding.buttonPlus.setOnClickListener {
             checkStatus(binding)
@@ -33,8 +37,8 @@ class MainActivity : AppCompatActivity() {
     private fun checkStatus(binding: ActivityMainBinding) {
         when (counter) {
             0 -> startCondition(binding)
-            in 1..49 -> workCondition(binding)
-            50 -> finishCondition(binding)
+            in 1..MAX_SEATS -> workCondition(binding)
+            MAX_SEATS + 1 -> finishCondition(binding)
         }
     }
 
@@ -54,7 +58,7 @@ class MainActivity : AppCompatActivity() {
         binding.buttonReset.visibility = View.INVISIBLE
         binding.textViewStatus.setTextColor(getColor(R.color.purple))
         binding.textViewPassengerCounter.text = counter.toString()
-        val outputText = "${getText(R.string.seats_left)} $counter"
+        val outputText = "${getText(R.string.seats_left)} ${MAX_SEATS - counter}"
         binding.textViewStatus.text = outputText
     }
 
