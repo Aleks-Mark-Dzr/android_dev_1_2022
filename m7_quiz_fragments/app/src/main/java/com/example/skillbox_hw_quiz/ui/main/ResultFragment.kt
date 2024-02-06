@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.navigation.fragment.findNavController
 import com.example.skillbox_hw_quiz.R
 import com.example.skillbox_hw_quiz.databinding.FragmentResultBinding
@@ -38,8 +39,17 @@ class ResultFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.resultTextView.text = resultQuiz
         binding.startAgainButton.setOnClickListener{
-            findNavController().navigate(R.id.action_resultFragment_to_welcomeFragment)
+            findNavController().navigate(R.id.action_resultFragment_to_mainFragment)
         }
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Выполняем навигацию обратно к WelcomeFragment
+                findNavController().navigate(R.id.action_resultFragment_to_welcomeFragment)
+            }
+        }
+
+        // Регистрируем callback в OnBackPressedDispatcher
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
     }
 
     override fun onDestroyView() {
