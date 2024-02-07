@@ -12,5 +12,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "m2_layout"
-include ':app'
+
+rootProject.name = "ScreenLayout"
+include(":app")
+ 

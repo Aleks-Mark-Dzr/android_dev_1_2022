@@ -1,4 +1,4 @@
-package com.example.m2_layout
+package com.example.screenlayout
 
 import org.junit.Test
 
