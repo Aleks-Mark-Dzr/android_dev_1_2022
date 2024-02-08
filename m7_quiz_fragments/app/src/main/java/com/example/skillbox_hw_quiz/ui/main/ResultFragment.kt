@@ -47,9 +47,6 @@ class ResultFragment : Fragment() {
                 findNavController().navigate(R.id.action_resultFragment_to_welcomeFragment)
             }
         }
-
-        // Регистрируем callback в OnBackPressedDispatcher
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
     }
 
     override fun onDestroyView() {
