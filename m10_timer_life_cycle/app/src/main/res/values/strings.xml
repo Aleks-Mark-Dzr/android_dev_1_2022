@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">m10_timer_life_cycle</string>
+    <string name="app_name">m10_timer_life_cycle(Экраны)</string>
     <string name="have_middle_name">У меня есть отчество</string>
     <string name="introduce_yourself">Представиться</string>
     <string name="surname">Фамилия</string>
