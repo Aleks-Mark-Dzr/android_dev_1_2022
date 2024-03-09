@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/welcomeFragment">
+    <fragment
+        android:id="@+id/welcomeFragment"
+        android:name="com.example.skillbox_hw_quiz.ui.main.WelcomeFragment"
+        android:label="WelcomeFragment">
+        <action
+            android:id="@+id/action_welcomeFragment_to_mainFragment"
+            app:destination="@id/mainFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/welcomeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.example.skillbox_hw_quiz.ui.main.MainFragment"
+        android:label="main_fragment"
+        tools:layout="@layout/main_fragment">
+        <action
+            android:id="@+id/action_mainFragment_to_resultFragment"
+            app:destination="@id/resultFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/welcomeFragment" />
+
+        <action
+            android:id="@+id/action_mainFragment_to_welcomeFragment"
+            app:destination="@id/welcomeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/welcomeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/resultFragment"
+        android:name="com.example.skillbox_hw_quiz.ui.main.ResultFragment"
+        android:label="fragment_result"
+        tools:layout="@layout/fragment_result">
+        <!--suppress NavigationFile -->
+        <argument
+            android:name="quizResult"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_resultFragment_to_mainFragment"
+            app:destination="@id/mainFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/welcomeFragment" />
+        <action
+            android:id="@+id/action_resultFragment_to_welcomeFragment"
+            app:destination="@+id/welcomeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/welcomeFragment" />
+    </fragment>
+</navigation>

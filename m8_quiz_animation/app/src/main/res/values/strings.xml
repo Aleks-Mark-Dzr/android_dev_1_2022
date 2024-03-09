@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">QuizMaster</string>
+    <string name="continue_button">Продолжить</string>
+    <string name="back_button">Назад</string>
+    <string name="submit_button">Отправить</string>
+    <string name="start_again_button">Начать заново</string>
+</resources>
