@@ -17,6 +17,8 @@ import com.example.skillbox_hw_quiz.R
 import com.example.skillbox_hw_quiz.databinding.MainFragmentBinding
 import com.example.skillbox_hw_quiz.quiz.Question
 import com.example.skillbox_hw_quiz.quiz.QuizStorage
+import android.animation.ObjectAnimator
+import kotlinx.coroutines.delay
 
 class MainFragment : Fragment() {
 
@@ -73,11 +75,18 @@ class MainFragment : Fragment() {
                     val radioButton = RadioButton(context).apply {
                         text = answer
                         id = View.generateViewId()
+                        alpha = 0f // начальная прозрачность
                     }
                     group.addView(radioButton)
+                    animateView(radioButton)
                 }
             }
             binding.quizContainer.addView(answersRadioGroup)
         }
+    }
+    private fun animateView(view: View) {
+        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f).apply {
+            duration = 3000 // Продолжительность анимации в миллисекундах
+        }.start()
     }
 }

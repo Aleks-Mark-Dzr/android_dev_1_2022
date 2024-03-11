@@ -1,5 +1,6 @@
 package com.example.skillbox_hw_quiz.ui.main
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -38,6 +39,18 @@ class ResultFragment : androidx.fragment.app.Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.resultTextView.text = resultQuiz
+
+        // Добавляем анимацию для resultTextView
+        ObjectAnimator.ofFloat(binding.resultTextView, "alpha", 0f, 1f).apply {
+            duration = 2000
+        }.start()
+
+        // Добавляем анимацию для startAgainButton
+        binding.startAgainButton.translationY = 100f // начальное положение
+        ObjectAnimator.ofFloat(binding.startAgainButton, "translationY", 100f, 0f).apply {
+            duration = 2000
+        }.start()
+
         binding.startAgainButton.setOnClickListener{
             findNavController().navigate(R.id.action_resultFragment_to_mainFragment)
         }
