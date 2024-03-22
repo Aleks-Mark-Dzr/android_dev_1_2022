@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?android:attr/colorControlHighlight"> <!-- Цвет волны -->
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle"> <!-- Форма Ripple -->
+            <solid android:color="@android:color/white" /> <!-- Цвет маски -->
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle"> <!-- Фон под Ripple -->
+            <solid android:color="@color/purple_200" /> <!-- Цвет фона кнопки -->
+        </shape>
+    </item>
+
+</ripple>

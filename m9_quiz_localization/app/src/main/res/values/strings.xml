@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name" translatable="false">QuizMaster</string>
+    <string name="continue_button" translatable="false">Continue</string>
+    <string name="back_button" translatable="false">Back</string>
+    <string name="submit_button" translatable="false">Send</string>
+    <string name="start_again_button" translatable="false">Start again</string>
+    <string name="date_of_birth_button" translatable="false">Enter date of birth</string>
+    <string name="answer_all_questions" translatable="false">Please answer all questions</string>
+</resources>

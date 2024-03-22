@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuizMaster</string>
+    <string name="continue_button" translatable="false">Продолжить</string>
+    <string name="back_button" translatable="false">Назад</string>
+    <string name="submit_button" translatable="false">Отправить</string>
+    <string name="start_again_button" translatable="false">Начать заново</string>
+    <string name="date_of_birth_button" translatable="false">Введите дату рождения</string>
+    <string name="answer_all_questions" translatable="false">ожалуйста, ответьте на все вопросы</string>
+</resources>
