@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">m11_timer_data_storage</string>
+    <string name="save_button">Сохранить</string>
+    <string name="clear_button">Очистить</string>
+</resources>
