@@ -1,21 +1,5 @@
 package com.example.m12_mvvm
 
-//import androidx.lifecycle.ViewModel
-//import kotlinx.coroutines.flow.MutableStateFlow
-//import kotlinx.coroutines.flow.StateFlow
-//import kotlinx.coroutines.flow.asStateFlow
-//
-//class MainViewModel : ViewModel() {
-//
-//    private val _stateFlow : MutableStateFlow<String> = MutableStateFlow("Empty")
-//    val stateFlow : StateFlow<String> = _stateFlow.asStateFlow()
-//    fun search() {
-//
-//
-//        TODO("Not yet implemented")
-//    }
-//}
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
