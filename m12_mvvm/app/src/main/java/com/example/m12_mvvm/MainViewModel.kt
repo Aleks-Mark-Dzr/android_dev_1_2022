@@ -33,6 +33,7 @@ class MainViewModel : ViewModel() {
     private val _stateFlow: MutableStateFlow<String> = MutableStateFlow("Empty")
     val stateFlow: StateFlow<String> = _stateFlow.asStateFlow()
 
+
     // Функция для установки текущего текста поиска из UI
     fun setSearchText(text: String) {
         _searchText.value = text

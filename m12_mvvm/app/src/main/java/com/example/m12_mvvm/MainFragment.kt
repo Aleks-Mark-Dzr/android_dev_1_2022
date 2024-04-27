@@ -43,7 +43,7 @@ class MainFragment : Fragment() {
                 viewModel.stateFlow
                     .collect {
                         Log.d(TAG, "onViewCreated $it")
-                        binding.stateFlow.text = it
+                        binding.searchTextResult.text = it
                     }
             }
     }
