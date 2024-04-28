@@ -1,5 +1,6 @@
 package com.example.m12_mvvm
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
@@ -13,7 +14,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+
+
 class MainViewModel : ViewModel() {
+
+    private val TAG = "MainViewModel"
+
     // StateFlow для отслеживания текста поиска
     private val _searchText = MutableStateFlow("")
 
@@ -24,7 +30,7 @@ class MainViewModel : ViewModel() {
     val searchEnabled: StateFlow<Boolean> = combine(_searchText, _isSearching) { text, isSearching ->
         text.length >= 3 && !isSearching
     }.stateIn(
-        scope = CoroutineScope(Dispatchers.Default), // Используйте ViewModelScope если доступно
+        scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(),
         initialValue = false
     )
@@ -33,9 +39,19 @@ class MainViewModel : ViewModel() {
     private val _stateFlow: MutableStateFlow<String> = MutableStateFlow("Empty")
     val stateFlow: StateFlow<String> = _stateFlow.asStateFlow()
 
+    // Инициализация логирования изменений searchEnabled
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            searchEnabled.collect { isEnabled ->
+                Log.d(TAG, "Search enabled: $isEnabled")
+            }
+        }
+    }
+
 
     // Функция для установки текущего текста поиска из UI
     fun setSearchText(text: String) {
+        Log.d(TAG, "Setting search text: $text")
         _searchText.value = text
     }
 
@@ -47,10 +63,12 @@ class MainViewModel : ViewModel() {
             // Здесь должна быть запущена реальная логика поиска
             // Пока мы будем симулировать результат
             _stateFlow.value = "Идет поиск по запросу '${_searchText.value}'..."
+            Log.d(TAG, "Search started for: ${_searchText.value}")
 
             // Симуляция задержки и завершения поиска
             viewModelScope.launch {
                 delay(2000)
+                Log.d(TAG, "Search ended for: ${_searchText.value}")
                 _stateFlow.value = "Результаты для '${_searchText.value}'"
                 _isSearching.value = false
             }
