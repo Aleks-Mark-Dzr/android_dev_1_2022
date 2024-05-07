@@ -25,6 +25,7 @@ class MainViewModel : ViewModel() {
 
     // StateFlow для отслеживания, активна ли операция поиска
     private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
     // Объединяем текст и состояние поиска для активации кнопки поиска
     val searchEnabled: StateFlow<Boolean> = combine(_searchText, _isSearching) { text, isSearching ->
@@ -69,7 +70,7 @@ class MainViewModel : ViewModel() {
             viewModelScope.launch {
                 delay(2000)
                 Log.d(TAG, "Search ended for: ${_searchText.value}")
-                _stateFlow.value = "Результаты для '${_searchText.value}'"
+                _stateFlow.value = "По запросу '${_searchText.value}' ничего не найдено"
                 _isSearching.value = false
             }
         }

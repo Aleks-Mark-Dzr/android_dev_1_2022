@@ -6,7 +6,8 @@
     android:layout_height="match_parent">
 
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragment_container_view_tag"
+        android:id="@+id/fragment_container_view"
+        android:name="com.example.m12_mvvm.MainFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

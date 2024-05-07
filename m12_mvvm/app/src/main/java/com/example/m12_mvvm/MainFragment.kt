@@ -1,14 +1,14 @@
 package com.example.m12_mvvm
-
 import androidx.fragment.app.viewModels
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.m12_mvvm.databinding.FragmentMainBinding
 import kotlinx.coroutines.launch
@@ -43,12 +43,19 @@ class MainFragment : Fragment() {
                         binding.searchTextResult.text = it
                     }
             }
+
+        // Наблюдение за состоянием поиска и управление видимостью ProgressBar
+        lifecycleScope.launchWhenStarted {
+            viewModel.isSearching.collect { isSearching ->
+                binding.progressBar.visibility = if (isSearching) View.VISIBLE else View.GONE
+            }
+        }
+
         // Наблюдение за изменением состояния доступности кнопки поиска
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.searchEnabled.collect { isEnabled ->
                 binding.searchButton.isEnabled = isEnabled
             }
-
         }
 
         // Обработчик изменения текста в поле ввода
@@ -59,11 +66,11 @@ class MainFragment : Fragment() {
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 // Во время изменения текста
+                viewModel.setSearchText(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {
                 // После изменения текста
-                viewModel.setSearchText(s.toString())
             }
         })
     }
