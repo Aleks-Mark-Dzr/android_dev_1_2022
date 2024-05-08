@@ -59,19 +59,6 @@ class MainFragment : Fragment() {
         }
 
         // Обработчик изменения текста в поле ввода
-        binding.searchText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-                // Перед изменением текста
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                // Во время изменения текста
-                viewModel.setSearchText(s.toString())
-            }
-
-            override fun afterTextChanged(s: Editable) {
-                // После изменения текста
-            }
-        })
+        binding.searchText.addTextChangedListener { viewModel.setSearchText(it.toString()) }
     }
 }
