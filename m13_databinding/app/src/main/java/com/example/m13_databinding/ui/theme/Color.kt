@@ -1,4 +1,4 @@
-package com.example.m12_mvvm.ui.theme
+package com.example.m13_databinding.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

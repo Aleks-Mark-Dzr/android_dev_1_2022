@@ -1,18 +1,14 @@
-package com.example.m12_mvvm
+package com.example.m13_databinding
 import androidx.fragment.app.viewModels
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.m12_mvvm.databinding.FragmentMainBinding
+import com.example.m13_databinding.databinding.FragmentMainBinding
 import kotlinx.coroutines.launch
 
 class MainFragment : Fragment() {

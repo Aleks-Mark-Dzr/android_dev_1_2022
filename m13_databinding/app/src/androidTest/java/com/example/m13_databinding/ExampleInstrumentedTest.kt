@@ -1,4 +1,4 @@
-package com.example.m12_mvvm
+package com.example.m13_databinding
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

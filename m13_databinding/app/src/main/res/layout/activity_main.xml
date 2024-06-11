@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewModel"
-            type="com.example.m12_mvvm.MainViewModel" />
+            type="com.example.m13_databinding.MainViewModel" />
         
     </data>
 
@@ -18,7 +18,7 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container_view"
-        android:name="com.example.m12_mvvm.MainFragment"
+        android:name="com.example.m13_databinding.MainFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

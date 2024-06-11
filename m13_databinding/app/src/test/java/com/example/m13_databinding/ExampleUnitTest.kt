@@ -1,4 +1,4 @@
-package com.example.m12_mvvm
+package com.example.m13_databinding
 
 import org.junit.Test
 

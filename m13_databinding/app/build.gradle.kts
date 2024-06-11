@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.m12_mvvm"
+    namespace = "com.example.m13_databinding"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.m12_mvvm"
+        applicationId = "com.example.m13_databinding"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
