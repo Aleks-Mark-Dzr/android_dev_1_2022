@@ -41,17 +41,9 @@ class MainFragment : Fragment() {
         lifecycleScope.launch {
 
             val response = RetrofitService.searchRandomuserApi.getRandomUser()
-            
-
-            viewLifecycleOwner.lifecycleScope.launch {
-
-                }
-
-            binding.searchButton.setOnClickListener {
+            imageView.load(response.body()?.first()?.url)
 
             }
         }
     }
-
-
 }
