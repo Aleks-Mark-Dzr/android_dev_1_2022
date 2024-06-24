@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.moshi.v1130)
     implementation(libs.moshi.kotlin)
     implementation(libs.glide)
+    implementation("com.squareup.moshi:moshi-kotlin:1.13.0")
     testImplementation(libs.junit)
     annotationProcessor(libs.compiler)
     androidTestImplementation(libs.androidx.junit)
