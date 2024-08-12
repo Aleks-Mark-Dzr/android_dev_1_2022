@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">m16_architecture</string>
+    <string name="suggested_activity_text">Fact about numbers will be shown here</string>
+    <string name="refresh_button_name">REFRESH</string>
+</resources>
