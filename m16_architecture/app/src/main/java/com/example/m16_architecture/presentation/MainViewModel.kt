@@ -1,6 +1,7 @@
 package com.example.m16_architecture.presentation
 
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.m16_architecture.domain.GetFactsAboutNumbersUseCase
@@ -21,7 +22,12 @@ class MainViewModel @Inject constructor(
 
     fun reloadFactsAboutNumbers() {
         viewModelScope.launch {
-            _fact.value = getFactsAboutNumbersUseCase.execute()
+            try {
+                _fact.value = getFactsAboutNumbersUseCase.execute()
+            } catch (e: Exception) {
+                // Логируем ошибку
+                Log.e("MainViewModel", "Error loading fact", e)
+            }
         }
     }
 }

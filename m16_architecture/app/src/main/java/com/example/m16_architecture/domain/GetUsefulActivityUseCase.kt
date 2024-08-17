@@ -7,7 +7,7 @@ import javax.inject.Inject
 class GetFactsAboutNumbersUseCase @Inject constructor(
     private val repository: FactsAboutNumbersRepository
 ) {
-    suspend fun execute(): FactsAboutNumbers {
+    suspend fun execute(): FactsAboutNumbers? {
         return repository.getFactsAboutNumbers()
     }
 }
