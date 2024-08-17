@@ -17,7 +17,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://numbersapi.com/random/math/")
+            .baseUrl("http://numbersapi.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
