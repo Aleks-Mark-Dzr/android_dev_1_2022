@@ -23,9 +23,13 @@ class MainViewModel @Inject constructor(
     fun reloadFactsAboutNumbers() {
         viewModelScope.launch {
             try {
-                _fact.value = getFactsAboutNumbersUseCase.execute()
+                val newFact = getFactsAboutNumbersUseCase.execute()
+                if (newFact != null) {
+                    _fact.value = newFact
+                } else {
+                    Log.e("MainViewModel", "No fact found")
+                }
             } catch (e: Exception) {
-                // Логируем ошибку
                 Log.e("MainViewModel", "Error loading fact", e)
             }
         }

@@ -3,6 +3,7 @@ package com.example.m16_architecture.presentation
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.btnGetFact.setOnClickListener {
+            Log.d("MainActivity", "Button clicked")
             viewModel.reloadFactsAboutNumbers()
         }
 
