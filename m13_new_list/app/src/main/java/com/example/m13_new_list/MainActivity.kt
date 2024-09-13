@@ -2,12 +2,14 @@ package com.example.m13_new_list
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.m13_new_list.databinding.ActivityMainBinding
 import com.example.m13_new_list.photoslist.MarsPhotosAdapter
 import com.example.m13_new_list.photoslist.MarsPhotosViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,13 +30,15 @@ class MainActivity : AppCompatActivity() {
         // Настраиваем RecyclerView
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Наблюдаем за изменениями в LiveData
-        viewModel.photos.observe(this, Observer { photos ->
-            adapter = MarsPhotosAdapter(photos) { photo ->
-                // Открытие фото на отдельном экране
+        // Наблюдаем за изменениями в StateFlow с использованием lifecycleScope
+        lifecycleScope.launch {
+            viewModel.photos.collect { photos ->
+                adapter = MarsPhotosAdapter(photos) { photo ->
+                    // Открытие фото на отдельном экране
+                }
+                binding.recyclerView.adapter = adapter
             }
-            binding.recyclerView.adapter = adapter
-        })
+        }
 
         // Загружаем фотографии с Марса
         viewModel.fetchMarsPhotos(1000, "UodhjJsYYRi9DCzJcxEDLCL2Ue7EwhVBQZufhHxf")
