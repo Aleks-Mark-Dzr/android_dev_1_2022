@@ -10,6 +10,7 @@ activityCompose = "1.7.0"
 composeBom = "2024.09.01"
 lifecycleViewModelKtx = "2.8.5"
 lifecycleLiveDataKtx = "2.8.5"
+constraintlayout = "2.1.4"
 pagingRuntime = "3.3.2"
 appcompat = "1.7.0"
 
@@ -38,6 +39,7 @@ androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifec
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLiveDataKtx" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "pagingRuntime" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
