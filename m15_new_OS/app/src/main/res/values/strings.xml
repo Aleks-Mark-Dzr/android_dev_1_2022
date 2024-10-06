@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">m15_new_OS</string>
+    <string name="photo_content_description">Фотография</string>
+    <string name="add_photo">Добавить фото</string>
+</resources>
