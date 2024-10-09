@@ -10,30 +10,35 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.m15_new_os.R
+import com.example.m15_new_os.databinding.FragmentAddPhotoBinding
+import com.example.m15_new_os.databinding.FragmentPhotoListBinding
 import com.example.m15_new_os.models.PhotoEntity
 
 class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(DiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.fragment_add_photo, parent, false)
-        return PhotoViewHolder(view)
+        val binding = FragmentAddPhotoBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return PhotoViewHolder(binding)
     }
+
 
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
         val photo = getItem(position)
         holder.bind(photo)
     }
 
-    class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val imageView: ImageView = itemView.findViewById(R.id.image_view)
-
+    class PhotoViewHolder(private val binding: FragmentAddPhotoBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(photo: PhotoEntity) {
             Glide.with(itemView.context)
                 .load(Uri.parse(photo.photoUri))
-                .into(imageView)
+                .into(binding.imageView)
         }
     }
+
 
     class DiffCallback : DiffUtil.ItemCallback<PhotoEntity>() {
         override fun areItemsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {

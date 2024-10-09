@@ -1,6 +1,7 @@
 package com.example.m15_new_os.presentation
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
@@ -19,9 +20,15 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
         val photoDao = AppDatabase.getDatabase(application).photoDao()
         repository = PhotoRepository(photoDao)
         allPhotos = repository.allPhotos
+        Log.d("PhotoViewModel", "PhotoDao initialized")
     }
 
-    fun insert(photo: PhotoEntity) = viewModelScope.launch(Dispatchers.IO) {
-        repository.insert(photo)
+    fun insert(photo: PhotoEntity) = viewModelScope.launch {
+        try {
+            repository.insert(photo)
+            Log.d("PhotoViewModel", "Photo inserted: ${photo.photoUri}")
+        } catch (e: Exception) {
+            Log.e("PhotoViewModel", "Failed to insert photo", e)
+        }
     }
 }
