@@ -1,5 +1,6 @@
 package com.example.m15_new_os.data
 
+import android.util.Log
 import com.example.m15_new_os.dao.PhotoDao
 import com.example.m15_new_os.models.PhotoEntity
 import kotlinx.coroutines.flow.Flow
@@ -23,5 +24,7 @@ class PhotoRepository(private val photoDao: PhotoDao) {
 
     suspend fun insert(photo: PhotoEntity) {
         photoDao.insert(photo)
+        // Логирование для отладки вставки
+        Log.d("PhotoRepository", "Photo inserted: ${photo.photoUri}")
     }
 }

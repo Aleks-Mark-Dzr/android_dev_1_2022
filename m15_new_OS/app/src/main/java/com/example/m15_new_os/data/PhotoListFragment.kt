@@ -6,15 +6,12 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.m15_new_os.R
 import com.example.m15_new_os.presentation.PhotoViewModel
 
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.m15_new_os.databinding.FragmentPhotoListBinding
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class PhotoListFragment : Fragment(R.layout.fragment_photo_list) {
@@ -25,6 +22,7 @@ class PhotoListFragment : Fragment(R.layout.fragment_photo_list) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
         Log.d("PhotoListFragment", "onViewCreated called")
 
         _binding = FragmentPhotoListBinding.bind(view)
@@ -41,13 +39,16 @@ class PhotoListFragment : Fragment(R.layout.fragment_photo_list) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.allPhotos.collect { photos ->
                 Log.d("PhotoListFragment", "Collecting photos: ${photos.size} items")
+                for (photo in photos) {
+                    Log.d("PhotoListFragment", "Photo URI: ${photo.photoUri}")
+                }
                 adapter.submitList(photos)
             }
         }
 
-        val fab = binding.buttonTakePhoto
-        fab.setOnClickListener {
-            Log.d("PhotoListFragment", "FAB clicked, navigating to AddPhotoFragment")
+        val butTakePhoto = binding.buttonTakePhoto
+        butTakePhoto.setOnClickListener {
+            Log.d("PhotoListFragment", "butTakePhoto clicked, navigating to AddPhotoFragment")
             findNavController().navigate(R.id.action_photoListFragment_to_addPhotoFragment)
         }
     }
