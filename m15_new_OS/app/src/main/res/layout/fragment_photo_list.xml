@@ -15,8 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/button_take_photo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/fragment_add_photo" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- FloatingActionButton для добавления новой фотографии -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
