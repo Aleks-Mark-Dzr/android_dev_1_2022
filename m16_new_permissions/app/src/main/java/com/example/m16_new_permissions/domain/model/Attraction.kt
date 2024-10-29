@@ -1,8 +1,13 @@
 package com.example.m16_new_permissions.domain.model
 
 data class Attraction(
-    val name: String,
-    val description: String,
-    val latitude: Double,
-    val longitude: Double
+    val xid: String,          // Уникальный идентификатор достопримечательности
+    val name: String,         // Название
+    val dist: Double,         // Расстояние от точки поиска
+    val point: Point          // Координаты
+)
+
+data class Point(
+    val lat: Double,
+    val lon: Double
 )
