@@ -22,6 +22,7 @@ import com.example.m16_new_permissions.data.service.LocationService
 import com.example.m16_new_permissions.databinding.FragmentMapBinding
 import com.example.m16_new_permissions.domain.model.Attraction
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
+import com.example.m16_new_permissions.domain.service.ILocationService
 import com.example.m16_new_permissions.presentation.viewmodel.MapViewModel
 import com.example.m16_new_permissions.presentation.viewmodel.MapViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
@@ -43,9 +44,10 @@ class MapFragment : Fragment() {
     private lateinit var mapController: IMapController
     private lateinit var locationOverlay: MyLocationNewOverlay
 
-    // Передаем locationService и attractionRepository в ViewModel через фабрику
-    private val locationService by lazy { LocationService(requireContext()) }
-    private val attractionRepository by lazy { AttractionRepositoryImpl() }
+    // Передаем locationService как интерфейс ILocationService
+    private val locationService: ILocationService by lazy { LocationService(requireContext()) }
+
+    private val attractionRepository: AttractionRepository by lazy { AttractionRepositoryImpl() }
 
     private val mapViewModel: MapViewModel by viewModels {
         MapViewModelFactory(locationService, attractionRepository)
@@ -65,7 +67,7 @@ class MapFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Установка пользовательского агента для osmdroid
         Configuration.getInstance().userAgentValue = requireContext().packageName
 
@@ -76,7 +78,7 @@ class MapFragment : Fragment() {
         mapView.setMultiTouchControls(true)
         mapController = mapView.controller
         mapController.setZoom(5.0)
-        mapController.setCenter(GeoPoint(48.8584, 2.2945)) // Центрируем карту на интересующей области
+        mapController.setCenter(GeoPoint(48.8584, 2.2945)) // Центрируйте на интересующей области
 
         // Настройка слоя для отображения текущего местоположения
         locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)

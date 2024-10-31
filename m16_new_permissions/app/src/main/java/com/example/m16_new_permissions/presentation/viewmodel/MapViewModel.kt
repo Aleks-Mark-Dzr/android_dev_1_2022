@@ -3,16 +3,16 @@ package com.example.m16_new_permissions.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.m16_new_permissions.data.service.LocationService
 import com.example.m16_new_permissions.domain.model.Attraction
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
+import com.example.m16_new_permissions.domain.service.ILocationService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 
 class MapViewModel(
-    private val locationService: LocationService,
+    private val locationService: ILocationService,
     private val attractionRepository: AttractionRepository
 ) : ViewModel() {
 
