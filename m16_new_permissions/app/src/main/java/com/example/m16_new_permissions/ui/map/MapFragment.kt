@@ -47,7 +47,6 @@ class MapFragment : Fragment() {
     private val locationService by lazy { LocationService(requireContext()) }
     private val attractionRepository by lazy { AttractionRepositoryImpl() }
 
-
     private val mapViewModel: MapViewModel by viewModels {
         MapViewModelFactory(locationService, attractionRepository)
     }
@@ -77,7 +76,7 @@ class MapFragment : Fragment() {
         mapView.setMultiTouchControls(true)
         mapController = mapView.controller
         mapController.setZoom(5.0)
-        mapController.setCenter(GeoPoint(48.8584, 2.2945)) // Центрируйте на интересующей области
+        mapController.setCenter(GeoPoint(48.8584, 2.2945)) // Центрируем карту на интересующей области
 
         // Настройка слоя для отображения текущего местоположения
         locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
@@ -132,7 +131,7 @@ class MapFragment : Fragment() {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.custom_marker) as? BitmapDrawable
         drawable?.let {
             val bitmap = it.bitmap
-            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 64, 64, false) // Настраиваем нужный размер, например, 64x64 пикселя
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 32, 32, false) // Пример с уменьшенным размером до 32x32 пикселей
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
@@ -155,8 +154,8 @@ class MapFragment : Fragment() {
                 snippet = attraction.description
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
 
-                // Задаем кастомную иконку
-                icon = ContextCompat.getDrawable(requireContext(), R.drawable.custom_marker)
+                // Используем масштабированную иконку
+                icon = getScaledMarkerIcon()
             }
             mapView.overlays.add(marker)
         }
