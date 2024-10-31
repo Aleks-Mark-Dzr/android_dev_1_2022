@@ -2,17 +2,14 @@ package com.example.m16_new_permissions.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.m16_new_permissions.data.service.LocationService
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
 
-class MapViewModelFactory(
-    private val locationService: LocationService,
-    private val attractionRepository: AttractionRepository
+class AttractionsViewModelFactory(
+    private val repository: AttractionRepository
 ) : ViewModelProvider.Factory {
-
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(MapViewModel::class.java)) {
-            return MapViewModel(locationService, attractionRepository) as T
+        if (modelClass.isAssignableFrom(AttractionsViewModel::class.java)) {
+            return AttractionsViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
