@@ -44,9 +44,7 @@ class MapFragment : Fragment() {
     private lateinit var mapController: IMapController
     private lateinit var locationOverlay: MyLocationNewOverlay
 
-    // Передаем locationService как интерфейс ILocationService
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
-
     private val attractionRepository: AttractionRepository by lazy { AttractionRepositoryImpl() }
 
     private val mapViewModel: MapViewModel by viewModels {
@@ -91,7 +89,10 @@ class MapFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 mapViewModel.currentLocation.collectLatest { geoPoint ->
-                    geoPoint?.let { mapController.animateTo(it) }
+                    geoPoint?.let {
+                        mapController.setCenter(it)
+                        mapController.setZoom(15.0) // Устанавливаем масштаб для отображения текущей локации
+                    }
                 }
             }
         }
@@ -117,6 +118,7 @@ class MapFragment : Fragment() {
         binding.currentLocationButton.setOnClickListener {
             if (hasLocationPermission()) {
                 mapViewModel.updateCurrentLocation(locationOverlay.myLocation)
+                mapController.setZoom(15.0) // Обновляем масштаб при переходе к текущей локации
             } else {
                 requestLocationPermissionLauncher.launch(
                     arrayOf(
@@ -133,7 +135,7 @@ class MapFragment : Fragment() {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.custom_marker) as? BitmapDrawable
         drawable?.let {
             val bitmap = it.bitmap
-            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 32, 32, false) // Пример с уменьшенным размером до 32x32 пикселей
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 32, 32, false)
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
@@ -146,7 +148,7 @@ class MapFragment : Fragment() {
             return
         }
 
-        mapView.overlays.removeIf { it is Marker } // Удаляем предыдущие маркеры
+        mapView.overlays.removeIf { it is Marker }
 
         attractions.forEach { attraction ->
             Log.d("MapFragment", "Adding marker at ${attraction.latitude}, ${attraction.longitude} for ${attraction.name}")
@@ -155,14 +157,12 @@ class MapFragment : Fragment() {
                 title = attraction.name
                 snippet = attraction.description
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-
-                // Используем масштабированную иконку
                 icon = getScaledMarkerIcon()
             }
             mapView.overlays.add(marker)
         }
 
-        mapView.invalidate() // Обновляем карту для отображения новых маркеров
+        mapView.invalidate()
     }
 
     private fun enableMyLocationIfPermitted() {
