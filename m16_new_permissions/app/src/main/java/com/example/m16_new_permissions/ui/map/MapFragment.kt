@@ -118,6 +118,7 @@ class MapFragment : Fragment() {
         binding.currentLocationButton.setOnClickListener {
             if (hasLocationPermission()) {
                 mapViewModel.updateCurrentLocation(locationOverlay.myLocation)
+                mapController.setCenter(locationOverlay.myLocation)
                 mapController.setZoom(15.0) // Обновляем масштаб при переходе к текущей локации
             } else {
                 requestLocationPermissionLauncher.launch(
