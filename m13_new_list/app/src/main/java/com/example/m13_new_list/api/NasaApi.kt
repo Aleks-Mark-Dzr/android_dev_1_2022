@@ -1,8 +1,5 @@
 package com.example.m13_new_list.api
 
-//class NasaApi {
-//}
-
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -25,6 +22,7 @@ object RetrofitInstance {
     val api: MarsApi by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(createOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(MarsApi::class.java)
