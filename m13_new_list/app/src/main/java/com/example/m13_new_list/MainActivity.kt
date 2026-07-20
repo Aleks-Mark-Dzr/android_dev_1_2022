@@ -1,6 +1,7 @@
 package com.example.m13_new_list
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -40,7 +41,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        lifecycleScope.launch {
+            viewModel.errorMessage.collect { message ->
+                if (message != null) {
+                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                    viewModel.clearError()
+                }
+            }
+        }
+
         // Загружаем фотографии с Марса
-        viewModel.fetchMarsPhotos(1000, "UodhjJsYYRi9DCzJcxEDLCL2Ue7EwhVBQZufhHxf")
+        viewModel.fetchMarsPhotos(1000, "bMKPMe8uLkFD4khlnnA8hnU8ck3OwC1XMNVFCewh")
     }
 }
