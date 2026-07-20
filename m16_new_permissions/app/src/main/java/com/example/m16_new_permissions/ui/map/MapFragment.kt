@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,7 +16,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.m16_new_permissions.BuildConfig
 import com.example.m16_new_permissions.R
 import com.example.m16_new_permissions.data.repository.AttractionRepositoryImpl
 import com.example.m16_new_permissions.data.service.LocationService
@@ -30,7 +28,6 @@ import com.example.m16_new_permissions.presentation.viewmodel.MapViewModelFactor
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.osmdroid.api.IMapController
-import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -68,7 +65,6 @@ class MapFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        configureOsmDroid()
 
         _binding = FragmentMapBinding.inflate(inflater, container, false)
 
@@ -118,9 +114,11 @@ class MapFragment : Fragment() {
         binding.zoomOutButton.setOnClickListener { mapController.zoomOut() }
         binding.currentLocationButton.setOnClickListener {
             if (hasLocationPermission()) {
-                mapViewModel.updateCurrentLocation(locationOverlay.myLocation)
-                mapController.setCenter(locationOverlay.myLocation)
-                mapController.setZoom(15.0) // Обновляем масштаб при переходе к текущей локации
+                locationOverlay.myLocation?.let { currentLocation ->
+                    mapViewModel.updateCurrentLocation(currentLocation)
+                    mapController.setCenter(currentLocation)
+                    mapController.setZoom(15.0)
+                } // Обновляем масштаб при переходе к текущей локации
             } else {
                 requestLocationPermissionLauncher.launch(
                     arrayOf(
@@ -141,16 +139,6 @@ class MapFragment : Fragment() {
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
-    }
-
-    private fun configureOsmDroid() {
-        val context = requireContext().applicationContext
-        Configuration.getInstance().load(
-            context,
-            PreferenceManager.getDefaultSharedPreferences(context)
-        )
-        Configuration.getInstance().userAgentValue =
-            "${context.packageName}/${BuildConfig.VERSION_NAME} (osmdroid; m16_new_permissions)"
     }
 
     // Функция для добавления маркеров для всех достопримечательностей на карту
@@ -193,8 +181,19 @@ class MapFragment : Fragment() {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
     }
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
+    }
 
     override fun onDestroyView() {
+        locationOverlay.disableMyLocation()
+        mapView.onDetach()
         super.onDestroyView()
         _binding = null // Очищаем binding, чтобы избежать утечек памяти
     }
