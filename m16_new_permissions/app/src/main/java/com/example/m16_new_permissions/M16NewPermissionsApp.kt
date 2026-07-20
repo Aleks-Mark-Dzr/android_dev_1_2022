@@ -13,14 +13,25 @@ class M16NewPermissionsApp : Application() {
 
     private fun configureOsmDroid() {
         val osmConfig = Configuration.getInstance()
-        osmConfig.userAgentValue = buildUserAgent()
+        osmConfig.userAgentValue = OSM_USER_AGENT
 
-        val cacheRoot = File(cacheDir, "osmdroid")
+        val cacheRoot = File(cacheDir, "osmdroid/\$OSM_CACHE_FOLDER")
         osmConfig.osmdroidBasePath = cacheRoot
         osmConfig.osmdroidTileCache = File(cacheRoot, "tiles")
     }
 
-    private fun buildUserAgent(): String {
-        return "$packageName/${BuildConfig.VERSION_NAME} (Android; osmdroid; contact: example@example.com)"
+    companion object {
+        private const val OSM_CACHE_FOLDER = "osm-tiles-v2"
+
+        /**
+         * OpenStreetMap blocks requests with generic/default clients. Use a stable,
+         * app-specific User-Agent so osmdroid tile requests comply with OSM policy.
+         */
+        private val OSM_USER_AGENT = listOf(
+            BuildConfig.APPLICATION_ID,
+            BuildConfig.VERSION_NAME,
+            "Android",
+            "osmdroid"
+        ).joinToString(separator = "; ")
     }
 }
