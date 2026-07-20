@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.m16_new_permissions.BuildConfig
 import com.example.m16_new_permissions.R
 import com.example.m16_new_permissions.data.repository.AttractionRepositoryImpl
 import com.example.m16_new_permissions.data.service.LocationService
@@ -66,8 +68,7 @@ class MapFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Установка пользовательского агента для osmdroid
-        Configuration.getInstance().userAgentValue = requireContext().packageName
+        configureOsmDroid()
 
         _binding = FragmentMapBinding.inflate(inflater, container, false)
 
@@ -140,6 +141,16 @@ class MapFragment : Fragment() {
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
+    }
+
+    private fun configureOsmDroid() {
+        val context = requireContext().applicationContext
+        Configuration.getInstance().load(
+            context,
+            PreferenceManager.getDefaultSharedPreferences(context)
+        )
+        Configuration.getInstance().userAgentValue =
+            "${context.packageName}/${BuildConfig.VERSION_NAME} (osmdroid; m16_new_permissions)"
     }
 
     // Функция для добавления маркеров для всех достопримечательностей на карту
