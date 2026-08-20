@@ -26,18 +26,23 @@ class MarsPhotosAdapter(private val photos: List<Photo>, private val onClick: (P
 
     inner class PhotoViewHolder(private val binding: ItemPhotoBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(photo: Photo) {
-            // Загружаем изображение с помощью Glide
-            Glide.with(binding.root.context).load(photo.img_src).into(binding.imageView)
+            // В списке грузим превью, оригинал остаётся для экрана деталей
+            Glide.with(binding.root.context).load(photo.previewUrl).into(binding.imageView)
+            binding.titleTextView.text = photo.title
 
             // Устанавливаем обработчик клика
             binding.root.setOnClickListener {
+                onClick(photo)
                 val context = binding.root.context
                 val intent = Intent(context, PhotoDetailActivity::class.java).apply {
-                    putExtra("photo_url", photo.img_src)
-                    putExtra("rover_name", photo.rover.name)
-                    putExtra("sol", photo.sol)
-                    putExtra("camera_name", photo.camera.full_name)
-                    putExtra("earth_date", photo.earth_date)
+                    putExtra(PhotoDetailActivity.EXTRA_PHOTO_URL, photo.fullUrl)
+                    putExtra(PhotoDetailActivity.EXTRA_TITLE, photo.title)
+                    putExtra(PhotoDetailActivity.EXTRA_ROVER, photo.rover)
+                    putExtra(PhotoDetailActivity.EXTRA_SOL, photo.sol)
+                    putExtra(PhotoDetailActivity.EXTRA_CAMERA, photo.camera)
+                    putExtra(PhotoDetailActivity.EXTRA_DATE, photo.date)
+                    putExtra(PhotoDetailActivity.EXTRA_CREDIT, photo.credit)
+                    putExtra(PhotoDetailActivity.EXTRA_DESCRIPTION, photo.description)
                 }
                 context.startActivity(intent)
             }

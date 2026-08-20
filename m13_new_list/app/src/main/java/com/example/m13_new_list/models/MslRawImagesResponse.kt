@@ -2,10 +2,7 @@ package com.example.m13_new_list.models
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Ответ JPL Raw Images API (https://mars.nasa.gov/api/v1/raw_image_items/).
- * Пришёл на смену api.nasa.gov/mars-photos, который отключён вместе с Heroku-хостингом.
- */
+/** Ответ JPL Raw Images API (https://mars.nasa.gov/api/v1/raw_image_items/). */
 data class MslRawImagesResponse(
     @SerializedName("items") val items: List<MslRawImage> = emptyList(),
     @SerializedName("total") val total: Int = 0,
@@ -15,25 +12,36 @@ data class MslRawImagesResponse(
 )
 
 data class MslRawImage(
-    @SerializedName("id") val id: Int,
-    @SerializedName("sol") val sol: Int,
-    @SerializedName("instrument") val instrument: String?,
-    @SerializedName("title") val title: String?,
-    @SerializedName("url") val url: String?,
-    @SerializedName("https_url") val httpsUrl: String?,
-    @SerializedName("date_taken") val dateTaken: String?,
-    @SerializedName("mission") val mission: String?
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("sol") val sol: Int = 0,
+    @SerializedName("instrument") val instrument: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("image_credit") val credit: String? = null,
+    @SerializedName("url") val url: String? = null,
+    @SerializedName("https_url") val httpsUrl: String? = null,
+    @SerializedName("date_taken") val dateTaken: String? = null,
+    @SerializedName("mission") val mission: String? = null
 )
 
-/** Приводим ответ нового API к модели, с которой уже работают адаптер и экран деталей. */
-fun MslRawImage.toPhoto(): Photo = Photo(
-    id = id,
-    sol = sol,
-    img_src = imageUrl(),
-    earth_date = dateTaken?.take(10).orEmpty(),
-    rover = Rover(name = roverName()),
-    camera = Camera(name = instrument.orEmpty(), full_name = cameraFullName())
-)
+/** Кадр без ссылки на изображение показывать нечем — такие отсеиваем. */
+fun MslRawImage.toPhoto(): Photo? {
+    val imageUrl = imageUrl().ifBlank { return null }
+
+    return Photo(
+        id = id.toString(),
+        title = title.orEmpty(),
+        description = description.orEmpty(),
+        credit = credit.orEmpty(),
+        rover = roverName(),
+        sol = sol.toString(),
+        camera = cameraName(),
+        date = dateTaken?.take(10).orEmpty(),
+        // Превью у сырых кадров нет — в списке и в деталях одна и та же картинка
+        previewUrl = imageUrl,
+        fullUrl = imageUrl
+    )
+}
 
 /** У части снимков https_url отсутствует, а url отдаётся по http — принудительно поднимаем схему. */
 private fun MslRawImage.imageUrl(): String {
@@ -49,6 +57,6 @@ private fun MslRawImage.roverName(): String = when (mission?.lowercase()) {
 }
 
 /** title приходит в виде "Sol 1000: Mast Camera (Mastcam)" — берём часть после двоеточия. */
-private fun MslRawImage.cameraFullName(): String =
+private fun MslRawImage.cameraName(): String =
     title?.substringAfter(':', "")?.trim()?.takeIf { it.isNotEmpty() }
         ?: instrument.orEmpty()

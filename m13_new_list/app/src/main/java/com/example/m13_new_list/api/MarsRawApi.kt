@@ -4,7 +4,8 @@ import com.example.m13_new_list.models.MslRawImagesResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface MarsApi {
+/** Сырые кадры марсоходов: https://mars.nasa.gov/api/v1/ */
+interface MarsRawApi {
 
     /**
      * Снимки марсохода за конкретный сол.
@@ -12,7 +13,7 @@ interface MarsApi {
      * Ключ не требуется.
      */
     @GET("raw_image_items/")
-    suspend fun getMarsPhotos(
+    suspend fun getPhotosBySol(
         @Query("condition_2") solFrom: String,
         @Query("condition_3") solTo: String,
         @Query("per_page") perPage: Int = DEFAULT_PER_PAGE,
@@ -22,8 +23,9 @@ interface MarsApi {
     ): MslRawImagesResponse
 
     companion object {
-        const val MISSION_CURIOSITY = "msl:mission"
+        const val BASE_URL = "https://mars.nasa.gov/api/v1/"
         const val DEFAULT_PER_PAGE = 50
+        private const val MISSION_CURIOSITY = "msl:mission"
         private const val DEFAULT_ORDER = "sol desc,date_taken desc"
 
         fun solCondition(sol: Int, comparison: String) = "$sol:sol:$comparison"

@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">m13_new_list</string>
+    <string name="photo_description">Снимок с Марса</string>
+    <string name="source_processed">Обработанные</string>
+    <string name="source_raw">Сырые кадры</string>
+    <string name="hint_query">Поисковый запрос</string>
+    <string name="hint_sol">Сол, например 1000</string>
+    <string name="show">Показать</string>
+    <string name="detail_rover">Марсоход: %s</string>
+    <string name="detail_sol">Sol: %s</string>
+    <string name="detail_camera">Камера: %s</string>
+    <string name="detail_date">Дата: %s</string>
+    <string name="detail_credit">Автор: %s</string>
 </resources>

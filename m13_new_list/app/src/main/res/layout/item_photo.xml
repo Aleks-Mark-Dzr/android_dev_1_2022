@@ -2,12 +2,24 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:paddingBottom="12dp">
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:scaleType="centerCrop"/>
+        android:contentDescription="@string/photo_description"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="6dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textStyle="bold" />
 
 </LinearLayout>

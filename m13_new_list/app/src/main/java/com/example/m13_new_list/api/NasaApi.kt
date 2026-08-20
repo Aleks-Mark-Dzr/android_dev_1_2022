@@ -6,7 +6,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    private const val BASE_URL = "https://mars.nasa.gov/api/v1/"
 
     // Функция для создания OkHttpClient с interceptor
     private fun createOkHttpClient(): OkHttpClient {
@@ -19,12 +18,23 @@ object RetrofitInstance {
             .build()
     }
 
-    val api: MarsApi by lazy {
+    // У источников разные хосты, поэтому Retrofit нужен свой на каждый.
+    // Клиент общий: пул соединений и кэш переиспользуются.
+    private val client by lazy { createOkHttpClient() }
+
+    private fun <T> createApi(baseUrl: String, service: Class<T>): T =
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(createOkHttpClient())
+            .baseUrl(baseUrl)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(MarsApi::class.java)
+            .create(service)
+
+    val rawApi: MarsRawApi by lazy {
+        createApi(MarsRawApi.BASE_URL, MarsRawApi::class.java)
+    }
+
+    val imagesApi: NasaImagesApi by lazy {
+        createApi(NasaImagesApi.BASE_URL, NasaImagesApi::class.java)
     }
 }
