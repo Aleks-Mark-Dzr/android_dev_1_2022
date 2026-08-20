@@ -14,6 +14,11 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    private companion object {
+        // Сол, за который показываем снимки Curiosity
+        const val SOL = 1000
+    }
+
     private lateinit var viewModel: MarsPhotosViewModel
     private lateinit var adapter: MarsPhotosAdapter
     private lateinit var binding: ActivityMainBinding
@@ -51,6 +56,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Загружаем фотографии с Марса
-        viewModel.fetchMarsPhotos(1000, "w2MJfTzWYhuhNMz8stEMtKyydLciL8HZZU5PCW6S")
+        viewModel.fetchMarsPhotos(SOL)
     }
 }

@@ -6,7 +6,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    private const val BASE_URL = "https://api.nasa.gov/mars-photos/api/v1/"
+    private const val BASE_URL = "https://mars.nasa.gov/api/v1/"
 
     // Функция для создания OkHttpClient с interceptor
     private fun createOkHttpClient(): OkHttpClient {
