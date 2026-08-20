@@ -33,7 +33,6 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
-import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 
 class MapFragment : Fragment() {
@@ -67,13 +66,13 @@ class MapFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Configuration.getInstance().userAgentValue =
-            "${requireContext().packageName}/1.0"
-
         _binding = FragmentMapBinding.inflate(inflater, container, false)
 
         // Настройка MapView и контроллера
+        // User-Agent задаётся один раз в M16NewPermissionsApp: перезаписывать его здесь нельзя,
+        // иначе OSM отдаёт тайлы-заглушки "Access blocked".
         mapView = binding.mapView
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapController = mapView.controller
         mapController.setZoom(5.0)

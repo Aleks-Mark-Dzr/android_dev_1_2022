@@ -15,7 +15,7 @@ class M16NewPermissionsApp : Application() {
         val osmConfig = Configuration.getInstance()
         osmConfig.userAgentValue = OSM_USER_AGENT
 
-        val cacheRoot = File(cacheDir, "osmdroid/\$OSM_CACHE_FOLDER")
+        val cacheRoot = File(cacheDir, "osmdroid/$OSM_CACHE_FOLDER")
         osmConfig.osmdroidBasePath = cacheRoot
         osmConfig.osmdroidTileCache = File(cacheRoot, "tiles")
     }
@@ -24,14 +24,12 @@ class M16NewPermissionsApp : Application() {
         private const val OSM_CACHE_FOLDER = "osm-tiles-v2"
 
         /**
-         * OpenStreetMap blocks requests with generic/default clients. Use a stable,
-         * app-specific User-Agent so osmdroid tile requests comply with OSM policy.
+         * OpenStreetMap blocks requests with generic/default clients: the osmdroid default
+         * ("osmdroid") and template package ids (com.example.*) are rejected with the
+         * "Access blocked" tiles. The User-Agent must identify this app uniquely.
+         * TODO: добавить контактный e-mail в скобках, как рекомендует политика OSM.
          */
-        private val OSM_USER_AGENT = listOf(
-            BuildConfig.APPLICATION_ID,
-            BuildConfig.VERSION_NAME,
-            "Android",
-            "osmdroid"
-        ).joinToString(separator = "; ")
+        private val OSM_USER_AGENT =
+            "SkillboxAttractionsMap/${BuildConfig.VERSION_NAME} (Android)"
     }
 }

@@ -51,6 +51,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Загружаем фотографии с Марса
-        viewModel.fetchMarsPhotos(1000, "bMKPMe8uLkFD4khlnnA8hnU8ck3OwC1XMNVFCewh")
+        viewModel.fetchMarsPhotos(1000, "w2MJfTzWYhuhNMz8stEMtKyydLciL8HZZU5PCW6S")
     }
 }
