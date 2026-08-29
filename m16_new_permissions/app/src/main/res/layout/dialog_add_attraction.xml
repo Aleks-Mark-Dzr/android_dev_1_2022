@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="8dp">
+
+    <!-- Координаты точки, в которой будет создана метка -->
+    <TextView
+        android:id="@+id/coordinatesTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:textStyle="italic" />
+
+    <EditText
+        android:id="@+id/nameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/attraction_name_hint"
+        android:inputType="textCapSentences"
+        android:maxLines="1"
+        android:importantForAutofill="no" />
+
+    <EditText
+        android:id="@+id/descriptionEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/attraction_description_hint"
+        android:inputType="textCapSentences|textMultiLine"
+        android:minLines="3"
+        android:gravity="top|start"
+        android:importantForAutofill="no" />
+</LinearLayout>

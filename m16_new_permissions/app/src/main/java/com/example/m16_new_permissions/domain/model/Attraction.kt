@@ -4,5 +4,7 @@ data class Attraction(
     val name: String,
     val description: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    // Метка, добавленная пользователем по текущей геопозиции
+    val isUserAdded: Boolean = false
 )

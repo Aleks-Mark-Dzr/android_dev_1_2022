@@ -5,4 +5,7 @@ import com.example.m16_new_permissions.domain.model.Attraction
 
 interface AttractionRepository {
     suspend fun getAttractions(): List<Attraction>
+
+    // Добавление новой метки (например, по текущей геопозиции пользователя)
+    suspend fun addAttraction(attraction: Attraction)
 }

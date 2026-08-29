@@ -49,4 +49,27 @@ class MapViewModel(
     fun updateCurrentLocation(geoPoint: GeoPoint) {
         locationService.updateLocation(geoPoint)
     }
+
+    // Геопозиция, по которой можно поставить метку: сначала уже известная, затем последняя из системы
+    fun resolveCurrentLocation(): GeoPoint? =
+        locationService.currentLocation.value ?: locationService.getLastKnownLocation()
+
+    // Добавление метки с описанием в указанной точке
+    fun addAttraction(name: String, description: String, geoPoint: GeoPoint) {
+        viewModelScope.launch {
+            val attraction = Attraction(
+                name = name,
+                description = description,
+                latitude = geoPoint.latitude,
+                longitude = geoPoint.longitude,
+                isUserAdded = true
+            )
+            attractionRepository.addAttraction(attraction)
+
+            Log.d("MapViewModel", "Added attraction: $attraction")
+
+            // Перечитываем список, чтобы карта обновилась
+            _attractions.value = attractionRepository.getAttractions()
+        }
+    }
 }

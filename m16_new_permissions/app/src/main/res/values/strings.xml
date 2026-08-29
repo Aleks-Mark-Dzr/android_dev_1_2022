@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">m16_new_permissions</string>
+
+    <!-- Добавление метки с текущей геопозицией -->
+    <string name="add_marker_button">Добавить метку</string>
+    <string name="add_marker_dialog_title">Новая метка</string>
+    <string name="add_marker_coordinates">Широта: %1$.6f, долгота: %2$.6f</string>
+    <string name="attraction_name_hint">Название</string>
+    <string name="attraction_description_hint">Описание</string>
+    <string name="attraction_name_required">Введите название метки</string>
+    <string name="location_unavailable">Текущее местоположение ещё не определено</string>
+    <string name="marker_added">Метка «%1$s» добавлена</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_cancel">Отмена</string>
 </resources>

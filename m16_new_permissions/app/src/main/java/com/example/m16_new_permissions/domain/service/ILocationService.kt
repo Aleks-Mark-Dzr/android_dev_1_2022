@@ -8,4 +8,7 @@ interface ILocationService {
     val currentLocation: StateFlow<GeoPoint?>
     fun requestLocationPermission(fragment: Fragment)
     fun updateLocation(geoPoint: GeoPoint)
+
+    // Последняя известная геопозиция (null, если разрешения нет или координаты ещё не получены)
+    fun getLastKnownLocation(): GeoPoint?
 }

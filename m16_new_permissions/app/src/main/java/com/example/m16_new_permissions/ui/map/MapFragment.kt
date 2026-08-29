@@ -4,12 +4,17 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -44,6 +49,9 @@ class MapFragment : Fragment() {
     private lateinit var mapController: IMapController
     private lateinit var locationOverlay: MyLocationNewOverlay
 
+    // Разрешение запрашивалось ради добавления метки: после выдачи сразу открываем диалог
+    private var pendingAddMarker = false
+
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
     private val attractionRepository: AttractionRepository by lazy { AttractionRepositoryImpl() }
 
@@ -59,7 +67,11 @@ class MapFragment : Fragment() {
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) {
             enableMyLocationIfPermitted()
+            if (pendingAddMarker) {
+                addMarkerAtCurrentLocation()
+            }
         }
+        pendingAddMarker = false
     }
 
     override fun onCreateView(
@@ -123,14 +135,77 @@ class MapFragment : Fragment() {
                     mapController.setZoom(15.0)
                 } // Обновляем масштаб при переходе к текущей локации
             } else {
-                requestLocationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
+                requestLocationPermission()
             }
         }
+
+        // Добавление метки с текущей геопозицией и описанием
+        binding.addMarkerButton.setOnClickListener {
+            if (hasLocationPermission()) {
+                addMarkerAtCurrentLocation()
+            } else {
+                pendingAddMarker = true
+                requestLocationPermission()
+            }
+        }
+    }
+
+    private fun requestLocationPermission() {
+        requestLocationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    // Определяем текущую геопозицию и предлагаем описать новую метку
+    private fun addMarkerAtCurrentLocation() {
+        val currentLocation = locationOverlay.myLocation ?: mapViewModel.resolveCurrentLocation()
+        if (currentLocation == null) {
+            Toast.makeText(requireContext(), R.string.location_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        mapViewModel.updateCurrentLocation(currentLocation)
+        showAddAttractionDialog(currentLocation)
+    }
+
+    // Диалог ввода названия и описания метки
+    private fun showAddAttractionDialog(geoPoint: GeoPoint) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_attraction, null)
+        val nameEditText = dialogView.findViewById<EditText>(R.id.nameEditText)
+        val descriptionEditText = dialogView.findViewById<EditText>(R.id.descriptionEditText)
+        dialogView.findViewById<TextView>(R.id.coordinatesTextView).text =
+            getString(R.string.add_marker_coordinates, geoPoint.latitude, geoPoint.longitude)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.add_marker_dialog_title)
+            .setView(dialogView)
+            // Слушатель назначаем ниже, иначе диалог закроется даже при пустом названии
+            .setPositiveButton(R.string.action_save, null)
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = nameEditText.text.toString().trim()
+                if (name.isEmpty()) {
+                    nameEditText.error = getString(R.string.attraction_name_required)
+                    return@setOnClickListener
+                }
+
+                mapViewModel.addAttraction(name, descriptionEditText.text.toString().trim(), geoPoint)
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.marker_added, name),
+                    Toast.LENGTH_SHORT
+                ).show()
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
 
     // Функция для масштабирования иконки маркера
@@ -142,6 +217,15 @@ class MapFragment : Fragment() {
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
+    }
+
+    // Метки, добавленные пользователем, выделяем отдельной иконкой
+    private fun getMarkerIcon(attraction: Attraction): Drawable? {
+        return if (attraction.isUserAdded) {
+            ContextCompat.getDrawable(requireContext(), R.drawable.red_marker)
+        } else {
+            getScaledMarkerIcon()
+        }
     }
 
     // Функция для добавления маркеров для всех достопримечательностей на карту
@@ -160,7 +244,7 @@ class MapFragment : Fragment() {
                 title = attraction.name
                 snippet = attraction.description
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                icon = getScaledMarkerIcon()
+                icon = getMarkerIcon(attraction)
             }
             mapView.overlays.add(marker)
         }
