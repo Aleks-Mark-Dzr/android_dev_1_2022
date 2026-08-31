@@ -1,14 +1,18 @@
 package com.example.m16_new_permissions.data.repository
 
+import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
 import com.example.m16_new_permissions.domain.model.Attraction
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
-class AttractionRepositoryImpl : AttractionRepository {
+class AttractionRepositoryImpl(
+    private val localDataSource: AttractionLocalDataSource
+) : AttractionRepository {
 
-    // Если используем API, здесь будет запрос к серверу.
-    // Пока список хранится в памяти, чтобы к нему можно было добавлять метки пользователя.
-    private val attractions = mutableListOf(
+    // Если используем API, здесь будет запрос к серверу
+    private val defaultAttractions = listOf(
         Attraction("Eiffel Tower", "An iconic landmark of Paris.", 48.8584, 2.2945),
         Attraction("Statue of Liberty", "A symbol of freedom in the USA.", 40.6892, -74.0445),
         Attraction("Great Wall of China", "Historic wall across northern China.", 40.4319, 116.5704),
@@ -20,9 +24,12 @@ class AttractionRepositoryImpl : AttractionRepository {
         // Другие достопримечательности
     )
 
-    override suspend fun getAttractions(): List<Attraction> = attractions.toList()
+    // К предустановленным достопримечательностям добавляем сохранённые метки пользователя
+    override suspend fun getAttractions(): List<Attraction> = withContext(Dispatchers.IO) {
+        defaultAttractions + localDataSource.getUserAttractions()
+    }
 
-    override suspend fun addAttraction(attraction: Attraction) {
-        attractions.add(attraction)
+    override suspend fun addAttraction(attraction: Attraction) = withContext(Dispatchers.IO) {
+        localDataSource.saveUserAttractions(localDataSource.getUserAttractions() + attraction)
     }
 }

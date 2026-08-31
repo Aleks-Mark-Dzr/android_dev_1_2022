@@ -22,6 +22,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.m16_new_permissions.R
+import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
 import com.example.m16_new_permissions.data.repository.AttractionRepositoryImpl
 import com.example.m16_new_permissions.data.service.LocationService
 import com.example.m16_new_permissions.databinding.FragmentMapBinding
@@ -53,7 +54,9 @@ class MapFragment : Fragment() {
     private var pendingAddMarker = false
 
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
-    private val attractionRepository: AttractionRepository by lazy { AttractionRepositoryImpl() }
+    private val attractionRepository: AttractionRepository by lazy {
+        AttractionRepositoryImpl(AttractionLocalDataSource(requireContext()))
+    }
 
     private val mapViewModel: MapViewModel by viewModels {
         MapViewModelFactory(locationService, attractionRepository)
