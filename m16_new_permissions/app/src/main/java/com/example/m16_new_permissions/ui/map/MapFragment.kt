@@ -3,8 +3,8 @@ package com.example.m16_new_permissions.ui.map
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -42,6 +43,10 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 
 class MapFragment : Fragment() {
+
+    private companion object {
+        const val MY_LOCATION_ICON_SIZE_DP = 24
+    }
 
     private var _binding: FragmentMapBinding? = null
     private val binding get() = _binding!!
@@ -95,6 +100,7 @@ class MapFragment : Fragment() {
 
         // Настройка слоя для отображения текущего местоположения
         locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
+        applyRedMyLocationIcons()
         mapView.overlays.add(locationOverlay)
 
         // Включаем отображение местоположения при наличии разрешений
@@ -211,6 +217,30 @@ class MapFragment : Fragment() {
         dialog.show()
     }
 
+    // Своя геопозиция выделяется красным: точка на месте и красная стрелка при движении
+    private fun applyRedMyLocationIcons() {
+        val sizePx = (MY_LOCATION_ICON_SIZE_DP * resources.displayMetrics.density).toInt()
+
+        getBitmapFromDrawable(R.drawable.my_location_dot, sizePx)?.let { personBitmap ->
+            locationOverlay.setPersonIcon(personBitmap)
+            locationOverlay.setPersonAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        }
+
+        getBitmapFromDrawable(R.drawable.red_marker, sizePx)?.let { directionBitmap ->
+            locationOverlay.setDirectionIcon(directionBitmap)
+            locationOverlay.setDirectionAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        }
+    }
+
+    // Векторные иконки OSM принимает только как Bitmap, поэтому отрисовываем их вручную
+    private fun getBitmapFromDrawable(@DrawableRes drawableRes: Int, sizePx: Int): Bitmap? {
+        val drawable = ContextCompat.getDrawable(requireContext(), drawableRes) ?: return null
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, sizePx, sizePx)
+        drawable.draw(Canvas(bitmap))
+        return bitmap
+    }
+
     // Функция для масштабирования иконки маркера
     private fun getScaledMarkerIcon(): BitmapDrawable? {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.custom_marker) as? BitmapDrawable
@@ -220,15 +250,6 @@ class MapFragment : Fragment() {
             return BitmapDrawable(resources, scaledBitmap)
         }
         return null
-    }
-
-    // Метки, добавленные пользователем, выделяем отдельной иконкой
-    private fun getMarkerIcon(attraction: Attraction): Drawable? {
-        return if (attraction.isUserAdded) {
-            ContextCompat.getDrawable(requireContext(), R.drawable.red_marker)
-        } else {
-            getScaledMarkerIcon()
-        }
     }
 
     // Функция для добавления маркеров для всех достопримечательностей на карту
@@ -247,7 +268,8 @@ class MapFragment : Fragment() {
                 title = attraction.name
                 snippet = attraction.description
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                icon = getMarkerIcon(attraction)
+                // Сохранённые пользователем метки рисуем так же, как существующие
+                icon = getScaledMarkerIcon()
             }
             mapView.overlays.add(marker)
         }
