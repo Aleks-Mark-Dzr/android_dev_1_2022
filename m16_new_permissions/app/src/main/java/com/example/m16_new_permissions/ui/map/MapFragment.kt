@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -41,11 +42,14 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import java.util.Locale
 
 class MapFragment : Fragment() {
 
     private companion object {
         const val MY_LOCATION_ICON_SIZE_DP = 24
+        const val MAX_LATITUDE = 90.0
+        const val MAX_LONGITUDE = 180.0
     }
 
     private var _binding: FragmentMapBinding? = null
@@ -80,6 +84,28 @@ class MapFragment : Fragment() {
             }
         }
         pendingAddMarker = false
+    }
+
+    // Перетаскивание метки пользователя по карте — быстрый способ поправить её локацию
+    private val userMarkerDragListener = object : Marker.OnMarkerDragListener {
+        override fun onMarkerDragStart(marker: Marker) = Unit
+
+        override fun onMarkerDrag(marker: Marker) = Unit
+
+        override fun onMarkerDragEnd(marker: Marker) {
+            val attraction = marker.relatedObject as? Attraction ?: return
+            mapViewModel.updateAttraction(
+                attraction,
+                attraction.name,
+                attraction.description,
+                marker.position
+            )
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.marker_moved, attraction.name),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     override fun onCreateView(
@@ -177,24 +203,41 @@ class MapFragment : Fragment() {
         }
 
         mapViewModel.updateCurrentLocation(currentLocation)
-        showAddAttractionDialog(currentLocation)
+        showAttractionDialog(currentLocation)
     }
 
-    // Диалог ввода названия и описания метки
-    private fun showAddAttractionDialog(geoPoint: GeoPoint) {
+    /**
+     * Диалог названия, описания и координат метки.
+     * Без [attraction] создаёт новую метку, с ним — редактирует сохранённую и позволяет её удалить.
+     */
+    private fun showAttractionDialog(geoPoint: GeoPoint, attraction: Attraction? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_attraction, null)
         val nameEditText = dialogView.findViewById<EditText>(R.id.nameEditText)
         val descriptionEditText = dialogView.findViewById<EditText>(R.id.descriptionEditText)
-        dialogView.findViewById<TextView>(R.id.coordinatesTextView).text =
-            getString(R.string.add_marker_coordinates, geoPoint.latitude, geoPoint.longitude)
+        val latitudeEditText = dialogView.findViewById<EditText>(R.id.latitudeEditText)
+        val longitudeEditText = dialogView.findViewById<EditText>(R.id.longitudeEditText)
 
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.add_marker_dialog_title)
+        nameEditText.setText(attraction?.name.orEmpty())
+        descriptionEditText.setText(attraction?.description.orEmpty())
+        latitudeEditText.setText(formatCoordinate(geoPoint.latitude))
+        longitudeEditText.setText(formatCoordinate(geoPoint.longitude))
+        if (attraction != null) {
+            dialogView.findViewById<TextView>(R.id.dragHintTextView).visibility = View.VISIBLE
+        }
+
+        val builder = AlertDialog.Builder(requireContext())
+            .setTitle(
+                if (attraction == null) R.string.add_marker_dialog_title
+                else R.string.edit_marker_dialog_title
+            )
             .setView(dialogView)
             // Слушатель назначаем ниже, иначе диалог закроется даже при пустом названии
             .setPositiveButton(R.string.action_save, null)
             .setNegativeButton(R.string.action_cancel, null)
-            .create()
+        if (attraction != null) {
+            builder.setNeutralButton(R.string.action_delete, null)
+        }
+        val dialog = builder.create()
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -204,17 +247,72 @@ class MapFragment : Fragment() {
                     return@setOnClickListener
                 }
 
-                mapViewModel.addAttraction(name, descriptionEditText.text.toString().trim(), geoPoint)
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.marker_added, name),
-                    Toast.LENGTH_SHORT
-                ).show()
+                val latitude = parseCoordinate(
+                    latitudeEditText,
+                    MAX_LATITUDE,
+                    R.string.attraction_latitude_invalid
+                ) ?: return@setOnClickListener
+                val longitude = parseCoordinate(
+                    longitudeEditText,
+                    MAX_LONGITUDE,
+                    R.string.attraction_longitude_invalid
+                ) ?: return@setOnClickListener
+
+                val description = descriptionEditText.text.toString().trim()
+                val position = GeoPoint(latitude, longitude)
+                if (attraction == null) {
+                    mapViewModel.addAttraction(name, description, position)
+                    showToast(getString(R.string.marker_added, name))
+                } else {
+                    mapViewModel.updateAttraction(attraction, name, description, position)
+                    showToast(getString(R.string.marker_updated, name))
+                }
                 dialog.dismiss()
+            }
+
+            if (attraction != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                    dialog.dismiss()
+                    showDeleteConfirmationDialog(attraction)
+                }
             }
         }
 
         dialog.show()
+    }
+
+    // Удаление необратимо, поэтому спрашиваем подтверждение
+    private fun showDeleteConfirmationDialog(attraction: Attraction) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.delete_marker_dialog_title)
+            .setMessage(getString(R.string.delete_marker_confirmation, attraction.name))
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                mapViewModel.deleteAttraction(attraction)
+                showToast(getString(R.string.marker_deleted, attraction.name))
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    // Координаты показываем в виде, который сами же умеем разобрать обратно
+    private fun formatCoordinate(value: Double): String = String.format(Locale.US, "%.6f", value)
+
+    private fun parseCoordinate(
+        editText: EditText,
+        limit: Double,
+        @StringRes errorRes: Int
+    ): Double? {
+        // Запятую с клавиатуры принимаем наравне с точкой
+        val value = editText.text.toString().trim().replace(',', '.').toDoubleOrNull()
+        if (value == null || value < -limit || value > limit) {
+            editText.error = getString(errorRes)
+            return null
+        }
+        return value
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     // Своя геопозиция выделяется красным: точка на месте и красная стрелка при движении
@@ -256,7 +354,6 @@ class MapFragment : Fragment() {
     private fun addAttractionsToMap(attractions: List<Attraction>) {
         if (attractions.isEmpty()) {
             Log.e("MapFragment", "No attractions found to display on the map.")
-            return
         }
 
         mapView.overlays.removeIf { it is Marker }
@@ -270,6 +367,18 @@ class MapFragment : Fragment() {
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 // Сохранённые пользователем метки рисуем так же, как существующие
                 icon = getScaledMarkerIcon()
+
+                // Редактировать можно только свои метки: по нажатию открываем диалог,
+                // а долгим нажатием метку разрешено перетащить в другую точку
+                if (attraction.isUserAdded) {
+                    relatedObject = attraction
+                    isDraggable = true
+                    setOnMarkerClickListener { clickedMarker, _ ->
+                        showAttractionDialog(clickedMarker.position, attraction)
+                        true
+                    }
+                    setOnMarkerDragListener(userMarkerDragListener)
+                }
             }
             mapView.overlays.add(marker)
         }

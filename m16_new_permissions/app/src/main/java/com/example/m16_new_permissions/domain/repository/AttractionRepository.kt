@@ -8,4 +8,10 @@ interface AttractionRepository {
 
     // Добавление новой метки (например, по текущей геопозиции пользователя)
     suspend fun addAttraction(attraction: Attraction)
+
+    // Сохранение изменений метки пользователя: названия, описания и координат
+    suspend fun updateAttraction(attraction: Attraction)
+
+    // Удаление метки пользователя по идентификатору
+    suspend fun deleteAttraction(attractionId: String)
 }

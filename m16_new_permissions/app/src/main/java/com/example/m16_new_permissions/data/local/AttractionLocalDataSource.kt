@@ -6,6 +6,7 @@ import com.example.m16_new_permissions.domain.model.Attraction
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import java.util.UUID
 
 /**
  * Хранит метки, добавленные пользователем, в SharedPreferences в виде JSON,
@@ -22,7 +23,20 @@ class AttractionLocalDataSource(context: Context) {
     fun getUserAttractions(): List<Attraction> {
         val json = preferences.getString(KEY_USER_ATTRACTIONS, null) ?: return emptyList()
         return try {
-            gson.fromJson<List<Attraction>>(json, attractionListType) ?: emptyList()
+            val saved = gson.fromJson<List<Attraction>>(json, attractionListType) ?: emptyList()
+            // Метки, сохранённые до появления id, Gson отдаёт без идентификатора:
+            // выдаём его сами, иначе такую метку нельзя отредактировать или удалить
+            val withIds = saved.map { attraction ->
+                if (attraction.id.isNullOrBlank()) {
+                    attraction.copy(id = UUID.randomUUID().toString())
+                } else {
+                    attraction
+                }
+            }
+            if (withIds != saved) {
+                saveUserAttractions(withIds)
+            }
+            withIds
         } catch (e: JsonSyntaxException) {
             // Сохранённые данные повреждены — сбрасываем их, чтобы приложение не падало на каждом запуске
             Log.e("AttractionLocalDS", "Failed to parse saved attractions, clearing storage", e)

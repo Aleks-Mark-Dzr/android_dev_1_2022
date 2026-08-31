@@ -72,4 +72,38 @@ class MapViewModel(
             _attractions.value = attractionRepository.getAttractions()
         }
     }
+
+    // Редактирование сохранённой метки: название, описание и координаты
+    fun updateAttraction(
+        attraction: Attraction,
+        name: String,
+        description: String,
+        geoPoint: GeoPoint
+    ) {
+        viewModelScope.launch {
+            val updated = attraction.copy(
+                name = name,
+                description = description,
+                latitude = geoPoint.latitude,
+                longitude = geoPoint.longitude
+            )
+            attractionRepository.updateAttraction(updated)
+
+            Log.d("MapViewModel", "Updated attraction: $updated")
+
+            // Перечитываем список, чтобы карта обновилась
+            _attractions.value = attractionRepository.getAttractions()
+        }
+    }
+
+    // Удаление сохранённой метки
+    fun deleteAttraction(attraction: Attraction) {
+        viewModelScope.launch {
+            attractionRepository.deleteAttraction(attraction.id)
+
+            Log.d("MapViewModel", "Deleted attraction: $attraction")
+
+            _attractions.value = attractionRepository.getAttractions()
+        }
+    }
 }

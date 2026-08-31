@@ -4,12 +4,26 @@
     <!-- Добавление метки с текущей геопозицией -->
     <string name="add_marker_button">Добавить метку</string>
     <string name="add_marker_dialog_title">Новая метка</string>
-    <string name="add_marker_coordinates">Широта: %1$.6f, долгота: %2$.6f</string>
     <string name="attraction_name_hint">Название</string>
     <string name="attraction_description_hint">Описание</string>
+    <string name="attraction_latitude_hint">Широта</string>
+    <string name="attraction_longitude_hint">Долгота</string>
     <string name="attraction_name_required">Введите название метки</string>
+    <string name="attraction_latitude_invalid">Широта: от -90 до 90</string>
+    <string name="attraction_longitude_invalid">Долгота: от -180 до 180</string>
     <string name="location_unavailable">Текущее местоположение ещё не определено</string>
     <string name="marker_added">Метка «%1$s» добавлена</string>
+
+    <!-- Редактирование и удаление сохранённой метки -->
+    <string name="edit_marker_dialog_title">Редактирование метки</string>
+    <string name="edit_marker_drag_hint">Метку можно перетащить по карте долгим нажатием</string>
+    <string name="marker_updated">Метка «%1$s» изменена</string>
+    <string name="marker_moved">Новое положение метки «%1$s» сохранено</string>
+    <string name="marker_deleted">Метка «%1$s» удалена</string>
+    <string name="delete_marker_dialog_title">Удалить метку?</string>
+    <string name="delete_marker_confirmation">Метка «%1$s» будет удалена без возможности восстановления</string>
+
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_delete">Удалить</string>
 </resources>

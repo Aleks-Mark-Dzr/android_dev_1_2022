@@ -32,4 +32,18 @@ class AttractionRepositoryImpl(
     override suspend fun addAttraction(attraction: Attraction) = withContext(Dispatchers.IO) {
         localDataSource.saveUserAttractions(localDataSource.getUserAttractions() + attraction)
     }
+
+    // Редактировать и удалять можно только метки пользователя: предустановленные заданы в коде
+    override suspend fun updateAttraction(attraction: Attraction) = withContext(Dispatchers.IO) {
+        val updated = localDataSource.getUserAttractions().map { saved ->
+            if (saved.id == attraction.id) attraction else saved
+        }
+        localDataSource.saveUserAttractions(updated)
+    }
+
+    override suspend fun deleteAttraction(attractionId: String) = withContext(Dispatchers.IO) {
+        localDataSource.saveUserAttractions(
+            localDataSource.getUserAttractions().filterNot { it.id == attractionId }
+        )
+    }
 }
