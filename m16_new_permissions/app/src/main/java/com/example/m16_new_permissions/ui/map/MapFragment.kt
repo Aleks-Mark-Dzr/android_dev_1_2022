@@ -1,6 +1,7 @@
 package com.example.m16_new_permissions.ui.map
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -10,7 +11,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.m16_new_permissions.R
 import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
+import com.example.m16_new_permissions.data.local.AttractionPhotoStorage
 import com.example.m16_new_permissions.data.repository.AttractionRepositoryImpl
 import com.example.m16_new_permissions.data.service.LocationService
 import com.example.m16_new_permissions.databinding.FragmentMapBinding
@@ -50,6 +54,9 @@ class MapFragment : Fragment() {
         const val MY_LOCATION_ICON_SIZE_DP = 24
         const val MAX_LATITUDE = 90.0
         const val MAX_LONGITUDE = 180.0
+        // Размеры, до которых уменьшаем фотографию при показе: в диалоге и в полноэкранном просмотре
+        const val PHOTO_PREVIEW_MAX_SIZE_PX = 720
+        const val PHOTO_FULL_MAX_SIZE_PX = 1600
     }
 
     private var _binding: FragmentMapBinding? = null
@@ -62,9 +69,16 @@ class MapFragment : Fragment() {
     // Разрешение запрашивалось ради добавления метки: после выдачи сразу открываем диалог
     private var pendingAddMarker = false
 
+    // Файл, в который камера сейчас делает снимок
+    private var pendingCameraPhotoPath: String? = null
+
+    // Открытый диалог метки: именно ему принадлежит выбранная фотография
+    private var activePhotoController: AttractionPhotoController? = null
+
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
+    private val photoStorage: AttractionPhotoStorage by lazy { AttractionPhotoStorage(requireContext()) }
     private val attractionRepository: AttractionRepository by lazy {
-        AttractionRepositoryImpl(AttractionLocalDataSource(requireContext()))
+        AttractionRepositoryImpl(AttractionLocalDataSource(requireContext()), photoStorage)
     }
 
     private val mapViewModel: MapViewModel by viewModels {
@@ -84,6 +98,47 @@ class MapFragment : Fragment() {
             }
         }
         pendingAddMarker = false
+    }
+
+    // Разрешение на камеру спрашиваем только когда пользователь выбрал съёмку фотографии
+    private val requestCameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            launchCamera()
+        } else {
+            showToast(getString(R.string.camera_permission_required))
+        }
+    }
+
+    // Снимок камеры пишется сразу в подготовленный файл, сюда приходит только признак успеха
+    private val takePhotoLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        val path = pendingCameraPhotoPath
+        pendingCameraPhotoPath = null
+        val controller = activePhotoController
+        if (success && path != null && controller != null) {
+            controller.setPhoto(path)
+        } else {
+            // Съёмку отменили или диалог уже закрыт — пустой файл не нужен
+            photoStorage.delete(path)
+        }
+    }
+
+    // Изображение из галереи копируем к себе: чужая content-ссылка после перезапуска перестанет открываться
+    private val pickPhotoLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        val controller = activePhotoController ?: return@registerForActivityResult
+        if (uri == null) return@registerForActivityResult
+
+        val copiedPath = photoStorage.copyToTemp(uri)
+        if (copiedPath == null) {
+            showToast(getString(R.string.photo_save_failed))
+        } else {
+            controller.setPhoto(copiedPath)
+        }
     }
 
     // Перетаскивание метки пользователя по карте — быстрый способ поправить её локацию
@@ -207,7 +262,7 @@ class MapFragment : Fragment() {
     }
 
     /**
-     * Диалог названия, описания и координат метки.
+     * Диалог названия, описания, координат и фотографии метки.
      * Без [attraction] создаёт новую метку, с ним — редактирует сохранённую и позволяет её удалить.
      */
     private fun showAttractionDialog(geoPoint: GeoPoint, attraction: Attraction? = null) {
@@ -224,6 +279,10 @@ class MapFragment : Fragment() {
         if (attraction != null) {
             dialogView.findViewById<TextView>(R.id.dragHintTextView).visibility = View.VISIBLE
         }
+
+        // Фотографией диалога управляет отдельный контроллер: он же убирает за собой временные файлы
+        val photoController = AttractionPhotoController(dialogView, attraction?.photoPath)
+        activePhotoController = photoController
 
         val builder = AlertDialog.Builder(requireContext())
             .setTitle(
@@ -260,11 +319,13 @@ class MapFragment : Fragment() {
 
                 val description = descriptionEditText.text.toString().trim()
                 val position = GeoPoint(latitude, longitude)
+                // Фото переносим в постоянное хранилище только сейчас, когда метка действительно сохраняется
+                val photoPath = photoController.commit()
                 if (attraction == null) {
-                    mapViewModel.addAttraction(name, description, position)
+                    mapViewModel.addAttraction(name, description, position, photoPath)
                     showToast(getString(R.string.marker_added, name))
                 } else {
-                    mapViewModel.updateAttraction(attraction, name, description, position)
+                    mapViewModel.updateAttraction(attraction, name, description, position, photoPath)
                     showToast(getString(R.string.marker_updated, name))
                 }
                 dialog.dismiss()
@@ -275,6 +336,13 @@ class MapFragment : Fragment() {
                     dialog.dismiss()
                     showDeleteConfirmationDialog(attraction)
                 }
+            }
+        }
+
+        dialog.setOnDismissListener {
+            photoController.discardUncommittedPhoto()
+            if (activePhotoController === photoController) {
+                activePhotoController = null
             }
         }
 
@@ -291,6 +359,173 @@ class MapFragment : Fragment() {
                 showToast(getString(R.string.marker_deleted, attraction.name))
             }
             .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    /**
+     * Фотография метки внутри диалога: выбор источника, предпросмотр, удаление
+     * и уборка временных файлов, если метку в итоге не сохранили.
+     */
+    private inner class AttractionPhotoController(
+        dialogView: View,
+        private val savedPhotoPath: String?
+    ) {
+        private val photoImageView: ImageView = dialogView.findViewById(R.id.photoImageView)
+        private val photoHintTextView: TextView = dialogView.findViewById(R.id.photoHintTextView)
+        private val addPhotoButton: Button = dialogView.findViewById(R.id.addPhotoButton)
+        private val removePhotoButton: Button = dialogView.findViewById(R.id.removePhotoButton)
+
+        // Фото, выбранное в диалоге: пока метка не сохранена, это может быть временный файл
+        private var photoPath: String? = savedPhotoPath
+
+        // После сохранения метки временный файл трогать нельзя — он уже стал фотографией метки
+        private var isCommitted = false
+
+        init {
+            addPhotoButton.setOnClickListener { showPhotoSourceDialog() }
+            removePhotoButton.setOnClickListener {
+                setPhoto(null)
+                showToast(getString(R.string.photo_removed))
+            }
+            photoImageView.setOnClickListener {
+                photoPath?.let { showPhotoPreviewDialog(it) }
+            }
+            bindPhoto()
+        }
+
+        fun setPhoto(path: String?) {
+            val previous = photoPath
+            // Заменённый или убранный временный файл сразу удаляем: в метку он уже не попадёт
+            if (previous != null && previous != path && photoStorage.isTemporary(previous)) {
+                photoStorage.delete(previous)
+            }
+            photoPath = path
+            bindPhoto()
+        }
+
+        /** Закрепляет фотографию за меткой и возвращает путь, который нужно сохранить */
+        fun commit(): String? {
+            val current = photoPath
+            isCommitted = true
+
+            val persisted = when {
+                current == null -> null
+                photoStorage.isTemporary(current) -> photoStorage.persist(current)
+                else -> current
+            }
+            if (current != null && persisted == null) {
+                // Перенести файл не удалось — оставляем метке прежнюю фотографию
+                showToast(getString(R.string.photo_save_failed))
+                return savedPhotoPath
+            }
+
+            // Прежнее фото метки больше не используется — освобождаем место
+            if (savedPhotoPath != null && savedPhotoPath != persisted) {
+                photoStorage.delete(savedPhotoPath)
+            }
+            return persisted
+        }
+
+        /** Диалог закрыли без сохранения: снятый или выбранный файл остаётся мусором */
+        fun discardUncommittedPhoto() {
+            val current = photoPath
+            if (!isCommitted && current != null && photoStorage.isTemporary(current)) {
+                photoStorage.delete(current)
+                photoPath = null
+            }
+        }
+
+        private fun bindPhoto() {
+            val path = photoPath
+            val bitmap = path?.let { photoStorage.decodeScaled(it, PHOTO_PREVIEW_MAX_SIZE_PX) }
+
+            if (bitmap == null) {
+                // Файл могли удалить извне — тогда считаем, что фотографии у метки нет
+                photoPath = null
+                photoImageView.setImageDrawable(null)
+                photoImageView.visibility = View.GONE
+                photoHintTextView.setText(R.string.attraction_photo_empty)
+                addPhotoButton.setText(R.string.action_add_photo)
+                removePhotoButton.visibility = View.GONE
+            } else {
+                photoImageView.setImageBitmap(bitmap)
+                photoImageView.visibility = View.VISIBLE
+                photoHintTextView.setText(R.string.attraction_photo_hint)
+                addPhotoButton.setText(R.string.action_change_photo)
+                removePhotoButton.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    // Источник фотографии: камера или галерея
+    private fun showPhotoSourceDialog() {
+        val options = arrayOf(
+            getString(R.string.photo_source_camera),
+            getString(R.string.photo_source_gallery)
+        )
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.photo_source_dialog_title)
+            .setItems(options) { _, which ->
+                if (which == 0) {
+                    requestPhotoFromCamera()
+                } else {
+                    // Системный выбор изображения работает без разрешения на чтение хранилища
+                    pickPhotoLauncher.launch("image/*")
+                }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    // Разрешение CAMERA объявлено в манифесте, поэтому без него камеру открыть нельзя
+    private fun requestPhotoFromCamera() {
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            launchCamera()
+        } else {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun launchCamera() {
+        if (activePhotoController == null) return
+
+        val output = try {
+            photoStorage.createCameraOutput()
+        } catch (e: IllegalArgumentException) {
+            Log.e("MapFragment", "Failed to prepare camera output", e)
+            showToast(getString(R.string.photo_save_failed))
+            return
+        }
+
+        pendingCameraPhotoPath = output.path
+        try {
+            takePhotoLauncher.launch(output.uri)
+        } catch (e: ActivityNotFoundException) {
+            // Приложения камеры на устройстве нет — остаётся галерея
+            Log.e("MapFragment", "No camera app available", e)
+            pendingCameraPhotoPath = null
+            photoStorage.delete(output.path)
+            showToast(getString(R.string.camera_unavailable))
+        }
+    }
+
+    // Фотография метки во весь экран
+    private fun showPhotoPreviewDialog(path: String) {
+        val bitmap = photoStorage.decodeScaled(path, PHOTO_FULL_MAX_SIZE_PX)
+        if (bitmap == null) {
+            showToast(getString(R.string.photo_load_failed))
+            return
+        }
+
+        val previewView = layoutInflater.inflate(R.layout.dialog_photo_preview, null)
+        previewView.findViewById<ImageView>(R.id.previewImageView).setImageBitmap(bitmap)
+        AlertDialog.Builder(requireContext())
+            .setView(previewView)
+            .setPositiveButton(R.string.action_close, null)
             .show()
     }
 
@@ -363,7 +598,7 @@ class MapFragment : Fragment() {
             val marker = Marker(mapView).apply {
                 position = GeoPoint(attraction.latitude, attraction.longitude)
                 title = attraction.name
-                snippet = attraction.description
+                snippet = buildMarkerSnippet(attraction)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 // Сохранённые пользователем метки рисуем так же, как существующие
                 icon = getScaledMarkerIcon()
@@ -384,6 +619,15 @@ class MapFragment : Fragment() {
         }
 
         mapView.invalidate()
+    }
+
+    // У метки с фотографией в подписи отмечаем, что фото можно открыть в её диалоге
+    private fun buildMarkerSnippet(attraction: Attraction): String {
+        if (!photoStorage.exists(attraction.photoPath)) return attraction.description
+
+        return listOf(attraction.description, getString(R.string.attraction_photo_attached))
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
     }
 
     private fun enableMyLocationIfPermitted() {
@@ -413,6 +657,11 @@ class MapFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // Фрагмент уходит вместе с открытым диалогом — незакреплённое фото удаляем.
+        // Файл незавершённого снимка не трогаем: камера может писать в него прямо сейчас
+        activePhotoController?.discardUncommittedPhoto()
+        activePhotoController = null
+
         locationOverlay.disableMyLocation()
         mapView.onDetach()
         super.onDestroyView()

@@ -54,15 +54,21 @@ class MapViewModel(
     fun resolveCurrentLocation(): GeoPoint? =
         locationService.currentLocation.value ?: locationService.getLastKnownLocation()
 
-    // Добавление метки с описанием в указанной точке
-    fun addAttraction(name: String, description: String, geoPoint: GeoPoint) {
+    // Добавление метки с описанием и фотографией в указанной точке
+    fun addAttraction(
+        name: String,
+        description: String,
+        geoPoint: GeoPoint,
+        photoPath: String? = null
+    ) {
         viewModelScope.launch {
             val attraction = Attraction(
                 name = name,
                 description = description,
                 latitude = geoPoint.latitude,
                 longitude = geoPoint.longitude,
-                isUserAdded = true
+                isUserAdded = true,
+                photoPath = photoPath
             )
             attractionRepository.addAttraction(attraction)
 
@@ -73,19 +79,22 @@ class MapViewModel(
         }
     }
 
-    // Редактирование сохранённой метки: название, описание и координаты
+    // Редактирование сохранённой метки: название, описание, координаты и фотография.
+    // Фото по умолчанию остаётся прежним — при перетаскивании метки его менять не нужно
     fun updateAttraction(
         attraction: Attraction,
         name: String,
         description: String,
-        geoPoint: GeoPoint
+        geoPoint: GeoPoint,
+        photoPath: String? = attraction.photoPath
     ) {
         viewModelScope.launch {
             val updated = attraction.copy(
                 name = name,
                 description = description,
                 latitude = geoPoint.latitude,
-                longitude = geoPoint.longitude
+                longitude = geoPoint.longitude,
+                photoPath = photoPath
             )
             attractionRepository.updateAttraction(updated)
 

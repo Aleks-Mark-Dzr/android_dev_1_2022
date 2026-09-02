@@ -1,6 +1,7 @@
 package com.example.m16_new_permissions.data.repository
 
 import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
+import com.example.m16_new_permissions.data.local.AttractionPhotoStorage
 import com.example.m16_new_permissions.domain.model.Attraction
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
 import kotlinx.coroutines.Dispatchers
@@ -8,7 +9,8 @@ import kotlinx.coroutines.withContext
 
 
 class AttractionRepositoryImpl(
-    private val localDataSource: AttractionLocalDataSource
+    private val localDataSource: AttractionLocalDataSource,
+    private val photoStorage: AttractionPhotoStorage
 ) : AttractionRepository {
 
     // Если используем API, здесь будет запрос к серверу
@@ -42,8 +44,9 @@ class AttractionRepositoryImpl(
     }
 
     override suspend fun deleteAttraction(attractionId: String) = withContext(Dispatchers.IO) {
-        localDataSource.saveUserAttractions(
-            localDataSource.getUserAttractions().filterNot { it.id == attractionId }
-        )
+        val saved = localDataSource.getUserAttractions()
+        // Вместе с меткой удаляем и её фотографию, иначе файл останется висеть во внутренней памяти
+        saved.firstOrNull { it.id == attractionId }?.let { photoStorage.delete(it.photoPath) }
+        localDataSource.saveUserAttractions(saved.filterNot { it.id == attractionId })
     }
 }

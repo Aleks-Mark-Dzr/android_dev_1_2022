@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Фото метки во весь диалог: открывается по нажатию на превью -->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/previewImageView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:adjustViewBounds="true"
+    android:scaleType="fitCenter"
+    android:contentDescription="@string/attraction_photo_description" />

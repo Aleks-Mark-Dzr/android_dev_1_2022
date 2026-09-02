@@ -23,7 +23,25 @@
     <string name="delete_marker_dialog_title">Удалить метку?</string>
     <string name="delete_marker_confirmation">Метка «%1$s» будет удалена без возможности восстановления</string>
 
+    <!-- Фотография метки -->
+    <string name="attraction_photo_description">Фотография метки</string>
+    <string name="attraction_photo_empty">Фотография не добавлена</string>
+    <string name="attraction_photo_hint">Нажмите на фото, чтобы открыть его целиком</string>
+    <string name="attraction_photo_attached">К метке добавлена фотография</string>
+    <string name="photo_source_dialog_title">Добавить фотографию</string>
+    <string name="photo_source_camera">Снять на камеру</string>
+    <string name="photo_source_gallery">Выбрать из галереи</string>
+    <string name="photo_load_failed">Не удалось открыть фотографию</string>
+    <string name="photo_save_failed">Не удалось сохранить фотографию</string>
+    <string name="photo_removed">Фотография удалена</string>
+    <string name="camera_unavailable">Камера недоступна на этом устройстве</string>
+    <string name="camera_permission_required">Без доступа к камере снимок сделать нельзя</string>
+
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_delete">Удалить</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_add_photo">Добавить фото</string>
+    <string name="action_change_photo">Заменить фото</string>
+    <string name="action_remove_photo">Удалить фото</string>
 </resources>

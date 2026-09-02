@@ -9,6 +9,8 @@ data class Attraction(
     val longitude: Double,
     // Метка, добавленная пользователем по текущей геопозиции
     val isUserAdded: Boolean = false,
+    // Путь к фотографии метки во внутреннем хранилище приложения, null — фото не добавлено
+    val photoPath: String? = null,
     // Идентификатор нужен, чтобы находить метку пользователя при редактировании и удалении
     val id: String = UUID.randomUUID().toString()
 )
