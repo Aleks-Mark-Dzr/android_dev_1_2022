@@ -35,9 +35,28 @@ class AttractionPhotoStorage(context: Context) {
      */
     fun createCameraOutput(): CameraOutput {
         val file = File(tempDir, "camera_${UUID.randomUUID()}.jpg")
-        val uri = FileProvider.getUriForFile(appContext, "${appContext.packageName}.fileprovider", file)
-        return CameraOutput(file.absolutePath, uri)
+        return CameraOutput(file.absolutePath, uriFor(file))
     }
+
+    /**
+     * content-ссылка на фотографию для отправки в другое приложение.
+     * Обе папки с фотографиями объявлены в file_paths.xml, поэтому годится и снятый только что
+     * снимок, и давно сохранённое фото метки.
+     */
+    fun shareUri(path: String): Uri? {
+        val file = File(path)
+        if (!file.exists()) return null
+
+        return try {
+            uriFor(file)
+        } catch (e: IllegalArgumentException) {
+            Log.e(TAG, "Failed to share photo $path", e)
+            null
+        }
+    }
+
+    private fun uriFor(file: File): Uri =
+        FileProvider.getUriForFile(appContext, "${appContext.packageName}$FILE_PROVIDER_SUFFIX", file)
 
     // Копируем выбранное в галерее изображение к себе: чужая content-ссылка ненадёжна
     fun copyToTemp(source: Uri): String? {
@@ -141,6 +160,7 @@ class AttractionPhotoStorage(context: Context) {
 
     private companion object {
         const val TAG = "AttractionPhotoStorage"
+        const val FILE_PROVIDER_SUFFIX = ".fileprovider"
         const val PHOTOS_DIR_NAME = "attraction_photos"
         const val TEMP_DIR_NAME = "attraction_photos_temp"
     }

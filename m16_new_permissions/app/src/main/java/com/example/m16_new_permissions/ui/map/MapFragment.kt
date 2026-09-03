@@ -2,6 +2,7 @@ package com.example.m16_new_permissions.ui.map
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -284,6 +285,33 @@ class MapFragment : Fragment() {
         val photoController = AttractionPhotoController(dialogView, attraction?.photoPath)
         activePhotoController = photoController
 
+        // Делимся тем, что сейчас в полях диалога: метку не обязательно сначала сохранять
+        dialogView.findViewById<Button>(R.id.shareButton).setOnClickListener {
+            val name = nameEditText.text.toString().trim()
+            if (name.isEmpty()) {
+                nameEditText.error = getString(R.string.attraction_name_required)
+                return@setOnClickListener
+            }
+
+            val latitude = parseCoordinate(
+                latitudeEditText,
+                MAX_LATITUDE,
+                R.string.attraction_latitude_invalid
+            ) ?: return@setOnClickListener
+            val longitude = parseCoordinate(
+                longitudeEditText,
+                MAX_LONGITUDE,
+                R.string.attraction_longitude_invalid
+            ) ?: return@setOnClickListener
+
+            shareAttraction(
+                name,
+                descriptionEditText.text.toString().trim(),
+                GeoPoint(latitude, longitude),
+                photoController.currentPhotoPath
+            )
+        }
+
         val builder = AlertDialog.Builder(requireContext())
             .setTitle(
                 if (attraction == null) R.string.add_marker_dialog_title
@@ -380,6 +408,10 @@ class MapFragment : Fragment() {
 
         // После сохранения метки временный файл трогать нельзя — он уже стал фотографией метки
         private var isCommitted = false
+
+        /** Фотография, которую диалог показывает прямо сейчас: ею и делимся */
+        val currentPhotoPath: String?
+            get() = photoPath
 
         init {
             addPhotoButton.setOnClickListener { showPhotoSourceDialog() }
@@ -527,6 +559,55 @@ class MapFragment : Fragment() {
             .setView(previewView)
             .setPositiveButton(R.string.action_close, null)
             .show()
+    }
+
+    /**
+     * Отправляет метку в другое приложение: текстом уходят название, описание, координаты
+     * и ссылка на карту, а при наличии фотографии к ним прикладывается и она.
+     */
+    private fun shareAttraction(
+        name: String,
+        description: String,
+        position: GeoPoint,
+        photoPath: String?
+    ) {
+        // Фото могли удалить извне — тогда делимся одним текстом
+        val photoUri = photoPath?.let { photoStorage.shareUri(it) }
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            putExtra(Intent.EXTRA_SUBJECT, name)
+            putExtra(Intent.EXTRA_TEXT, buildShareText(name, description, position))
+            if (photoUri == null) {
+                type = "text/plain"
+            } else {
+                type = "image/jpeg"
+                putExtra(Intent.EXTRA_STREAM, photoUri)
+                // Наши файлы лежат в личной папке: без этого флага получатель их не прочитает
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
+
+        try {
+            startActivity(
+                Intent.createChooser(shareIntent, getString(R.string.share_attraction_chooser_title))
+            )
+        } catch (e: ActivityNotFoundException) {
+            Log.e("MapFragment", "No app to share attraction with", e)
+            showToast(getString(R.string.share_no_app))
+        }
+    }
+
+    // Координаты пишем тем же форматом, что и в полях диалога, и дублируем ссылкой на карту
+    private fun buildShareText(name: String, description: String, position: GeoPoint): String {
+        val latitude = formatCoordinate(position.latitude)
+        val longitude = formatCoordinate(position.longitude)
+
+        return listOf(
+            name,
+            description,
+            getString(R.string.share_attraction_coordinates, latitude, longitude),
+            getString(R.string.share_attraction_map_link, latitude, longitude)
+        ).filter { it.isNotBlank() }.joinToString("\n")
     }
 
     // Координаты показываем в виде, который сами же умеем разобрать обратно

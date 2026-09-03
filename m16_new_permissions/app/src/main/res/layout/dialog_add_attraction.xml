@@ -103,6 +103,14 @@
                 android:visibility="gone" />
         </LinearLayout>
 
+        <!-- Отправка метки и её фотографии в другое приложение -->
+        <Button
+            android:id="@+id/shareButton"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/action_share" />
+
         <!-- Подсказка о том, что метку можно перетащить прямо по карте -->
         <TextView
             android:id="@+id/dragHintTextView"

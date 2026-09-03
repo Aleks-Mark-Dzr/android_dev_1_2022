@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Пути, которые FileProvider разрешает отдавать наружу: только временная папка снимков камеры -->
+<!-- Пути, которые FileProvider разрешает отдавать наружу: временная папка снимков камеры
+     и папка сохранённых фотографий, которыми пользователь делится из диалога метки -->
 <paths>
     <cache-path
         name="attraction_photos_temp"
         path="attraction_photos_temp/" />
+
+    <files-path
+        name="attraction_photos"
+        path="attraction_photos/" />
 </paths>

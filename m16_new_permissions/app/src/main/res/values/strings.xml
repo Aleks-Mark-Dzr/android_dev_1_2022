@@ -37,6 +37,12 @@
     <string name="camera_unavailable">Камера недоступна на этом устройстве</string>
     <string name="camera_permission_required">Без доступа к камере снимок сделать нельзя</string>
 
+    <!-- Отправка метки в другое приложение -->
+    <string name="share_attraction_chooser_title">Поделиться меткой</string>
+    <string name="share_attraction_coordinates">Координаты: %1$s, %2$s</string>
+    <string name="share_attraction_map_link">https://www.openstreetmap.org/?mlat=%1$s&amp;mlon=%2$s#map=17/%1$s/%2$s</string>
+    <string name="share_no_app">Нет приложения, которому можно отправить метку</string>
+
     <string name="action_save">Сохранить</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_delete">Удалить</string>
@@ -44,4 +50,5 @@
     <string name="action_add_photo">Добавить фото</string>
     <string name="action_change_photo">Заменить фото</string>
     <string name="action_remove_photo">Удалить фото</string>
+    <string name="action_share">Поделиться</string>
 </resources>
