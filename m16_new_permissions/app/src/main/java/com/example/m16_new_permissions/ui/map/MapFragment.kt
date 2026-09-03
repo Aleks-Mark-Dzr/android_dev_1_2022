@@ -28,6 +28,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.m16_new_permissions.R
+import com.example.m16_new_permissions.data.backup.AttractionBackup
 import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
 import com.example.m16_new_permissions.data.local.AttractionPhotoStorage
 import com.example.m16_new_permissions.data.repository.AttractionRepositoryImpl
@@ -47,6 +48,8 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class MapFragment : Fragment() {
@@ -58,6 +61,14 @@ class MapFragment : Fragment() {
         // Размеры, до которых уменьшаем фотографию при показе: в диалоге и в полноэкранном просмотре
         const val PHOTO_PREVIEW_MAX_SIZE_PX = 720
         const val PHOTO_FULL_MAX_SIZE_PX = 1600
+        const val BACKUP_MIME_TYPE = "application/zip"
+        // Диск и часть файловых менеджеров отдают zip под другим типом, поэтому принимаем все три
+        val BACKUP_OPEN_MIME_TYPES = arrayOf(
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/octet-stream"
+        )
+        const val BACKUP_NAME_DATE_PATTERN = "yyyyMMdd_HHmm"
     }
 
     private var _binding: FragmentMapBinding? = null
@@ -79,7 +90,12 @@ class MapFragment : Fragment() {
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
     private val photoStorage: AttractionPhotoStorage by lazy { AttractionPhotoStorage(requireContext()) }
     private val attractionRepository: AttractionRepository by lazy {
-        AttractionRepositoryImpl(AttractionLocalDataSource(requireContext()), photoStorage)
+        val localDataSource = AttractionLocalDataSource(requireContext())
+        AttractionRepositoryImpl(
+            localDataSource,
+            photoStorage,
+            AttractionBackup(requireContext(), localDataSource, photoStorage)
+        )
     }
 
     private val mapViewModel: MapViewModel by viewModels {
@@ -123,7 +139,7 @@ class MapFragment : Fragment() {
             controller.setPhoto(path)
         } else {
             // Съёмку отменили или диалог уже закрыт — пустой файл не нужен
-            photoStorage.delete(path)
+            photoStorage.deleteFile(path)
         }
     }
 
@@ -140,6 +156,19 @@ class MapFragment : Fragment() {
         } else {
             controller.setPhoto(copiedPath)
         }
+    }
+
+    // Куда сохранить архив, решает пользователь в системном диалоге: это может быть и папка Google Диска
+    private val exportBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE)
+    ) { uri ->
+        uri?.let { mapViewModel.exportBackup(it) }
+    }
+
+    private val importBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { mapViewModel.importBackup(it) }
     }
 
     // Перетаскивание метки пользователя по карте — быстрый способ поправить её локацию
@@ -209,6 +238,13 @@ class MapFragment : Fragment() {
             }
         }
 
+        // Итог работы с резервной копией показываем тостом
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                mapViewModel.backupEvents.collect { event -> showBackupResult(event) }
+            }
+        }
+
         return binding.root
     }
 
@@ -239,6 +275,62 @@ class MapFragment : Fragment() {
                 requestLocationPermission()
             }
         }
+
+        binding.backupButton.setOnClickListener { showBackupDialog() }
+    }
+
+    /**
+     * Выбор действия с резервной копией: выгрузить метки в файл или восстановить их из файла.
+     * Действия разведены по кнопкам, а не по списку: список и пояснение занимают в диалоге
+     * одно и то же место, и вместе они не показываются.
+     */
+    private fun showBackupDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.backup_dialog_title)
+            .setMessage(R.string.backup_dialog_message)
+            .setPositiveButton(R.string.backup_action_export) { _, _ -> startBackupExport() }
+            .setNeutralButton(R.string.backup_action_import) { _, _ -> startBackupImport() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun startBackupExport() {
+        // Предустановленные достопримечательности заданы в коде и в копию не идут
+        if (mapViewModel.attractions.value.none { it.isUserAdded }) {
+            showToast(getString(R.string.backup_nothing_to_export))
+            return
+        }
+
+        val timestamp = SimpleDateFormat(BACKUP_NAME_DATE_PATTERN, Locale.US).format(Date())
+        launchBackupPicker { exportBackupLauncher.launch(getString(R.string.backup_file_name, timestamp)) }
+    }
+
+    private fun startBackupImport() {
+        launchBackupPicker { importBackupLauncher.launch(BACKUP_OPEN_MIME_TYPES) }
+    }
+
+    // На устройстве без файлового менеджера системный диалог открыть некому
+    private fun launchBackupPicker(launch: () -> Unit) {
+        try {
+            launch()
+        } catch (e: ActivityNotFoundException) {
+            Log.e("MapFragment", "No document picker available", e)
+            showToast(getString(R.string.backup_no_file_manager))
+        }
+    }
+
+    private fun showBackupResult(event: MapViewModel.BackupEvent) {
+        val message = when (event) {
+            is MapViewModel.BackupEvent.Exported ->
+                getString(R.string.backup_exported, event.count)
+
+            is MapViewModel.BackupEvent.Imported ->
+                getString(R.string.backup_imported, event.added, event.updated)
+
+            MapViewModel.BackupEvent.ExportFailed -> getString(R.string.backup_export_failed)
+            MapViewModel.BackupEvent.ImportFailed -> getString(R.string.backup_import_failed)
+        }
+        showToast(message)
     }
 
     private fun requestLocationPermission() {
@@ -282,7 +374,7 @@ class MapFragment : Fragment() {
         }
 
         // Фотографией диалога управляет отдельный контроллер: он же убирает за собой временные файлы
-        val photoController = AttractionPhotoController(dialogView, attraction?.photoPath)
+        val photoController = AttractionPhotoController(dialogView, attraction?.photoName)
         activePhotoController = photoController
 
         // Делимся тем, что сейчас в полях диалога: метку не обязательно сначала сохранять
@@ -348,12 +440,12 @@ class MapFragment : Fragment() {
                 val description = descriptionEditText.text.toString().trim()
                 val position = GeoPoint(latitude, longitude)
                 // Фото переносим в постоянное хранилище только сейчас, когда метка действительно сохраняется
-                val photoPath = photoController.commit()
+                val photoName = photoController.commit()
                 if (attraction == null) {
-                    mapViewModel.addAttraction(name, description, position, photoPath)
+                    mapViewModel.addAttraction(name, description, position, photoName)
                     showToast(getString(R.string.marker_added, name))
                 } else {
-                    mapViewModel.updateAttraction(attraction, name, description, position, photoPath)
+                    mapViewModel.updateAttraction(attraction, name, description, position, photoName)
                     showToast(getString(R.string.marker_updated, name))
                 }
                 dialog.dismiss()
@@ -396,15 +488,16 @@ class MapFragment : Fragment() {
      */
     private inner class AttractionPhotoController(
         dialogView: View,
-        private val savedPhotoPath: String?
+        private val savedPhotoName: String?
     ) {
         private val photoImageView: ImageView = dialogView.findViewById(R.id.photoImageView)
         private val photoHintTextView: TextView = dialogView.findViewById(R.id.photoHintTextView)
         private val addPhotoButton: Button = dialogView.findViewById(R.id.addPhotoButton)
         private val removePhotoButton: Button = dialogView.findViewById(R.id.removePhotoButton)
 
-        // Фото, выбранное в диалоге: пока метка не сохранена, это может быть временный файл
-        private var photoPath: String? = savedPhotoPath
+        // Фото, выбранное в диалоге: полный путь, потому что пока метка не сохранена,
+        // это может быть временный файл в кэше
+        private var photoPath: String? = photoStorage.pathOf(savedPhotoName)
 
         // После сохранения метки временный файл трогать нельзя — он уже стал фотографией метки
         private var isCommitted = false
@@ -429,13 +522,13 @@ class MapFragment : Fragment() {
             val previous = photoPath
             // Заменённый или убранный временный файл сразу удаляем: в метку он уже не попадёт
             if (previous != null && previous != path && photoStorage.isTemporary(previous)) {
-                photoStorage.delete(previous)
+                photoStorage.deleteFile(previous)
             }
             photoPath = path
             bindPhoto()
         }
 
-        /** Закрепляет фотографию за меткой и возвращает путь, который нужно сохранить */
+        /** Закрепляет фотографию за меткой и возвращает имя файла, которое нужно сохранить */
         fun commit(): String? {
             val current = photoPath
             isCommitted = true
@@ -443,17 +536,18 @@ class MapFragment : Fragment() {
             val persisted = when {
                 current == null -> null
                 photoStorage.isTemporary(current) -> photoStorage.persist(current)
-                else -> current
+                // Фотографию не меняли — она уже лежит в хранилище под прежним именем
+                else -> savedPhotoName
             }
             if (current != null && persisted == null) {
                 // Перенести файл не удалось — оставляем метке прежнюю фотографию
                 showToast(getString(R.string.photo_save_failed))
-                return savedPhotoPath
+                return savedPhotoName
             }
 
             // Прежнее фото метки больше не используется — освобождаем место
-            if (savedPhotoPath != null && savedPhotoPath != persisted) {
-                photoStorage.delete(savedPhotoPath)
+            if (savedPhotoName != null && savedPhotoName != persisted) {
+                photoStorage.deletePhoto(savedPhotoName)
             }
             return persisted
         }
@@ -462,7 +556,7 @@ class MapFragment : Fragment() {
         fun discardUncommittedPhoto() {
             val current = photoPath
             if (!isCommitted && current != null && photoStorage.isTemporary(current)) {
-                photoStorage.delete(current)
+                photoStorage.deleteFile(current)
                 photoPath = null
             }
         }
@@ -540,7 +634,7 @@ class MapFragment : Fragment() {
             // Приложения камеры на устройстве нет — остаётся галерея
             Log.e("MapFragment", "No camera app available", e)
             pendingCameraPhotoPath = null
-            photoStorage.delete(output.path)
+            photoStorage.deleteFile(output.path)
             showToast(getString(R.string.camera_unavailable))
         }
     }
@@ -704,7 +798,7 @@ class MapFragment : Fragment() {
 
     // У метки с фотографией в подписи отмечаем, что фото можно открыть в её диалоге
     private fun buildMarkerSnippet(attraction: Attraction): String {
-        if (!photoStorage.exists(attraction.photoPath)) return attraction.description
+        if (!photoStorage.exists(attraction.photoName)) return attraction.description
 
         return listOf(attraction.description, getString(R.string.attraction_photo_attached))
             .filter { it.isNotBlank() }

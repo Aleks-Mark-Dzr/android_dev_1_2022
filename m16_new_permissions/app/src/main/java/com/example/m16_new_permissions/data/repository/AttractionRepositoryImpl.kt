@@ -1,8 +1,11 @@
 package com.example.m16_new_permissions.data.repository
 
+import android.net.Uri
+import com.example.m16_new_permissions.data.backup.AttractionBackup
 import com.example.m16_new_permissions.data.local.AttractionLocalDataSource
 import com.example.m16_new_permissions.data.local.AttractionPhotoStorage
 import com.example.m16_new_permissions.domain.model.Attraction
+import com.example.m16_new_permissions.domain.model.RestoreSummary
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,7 +13,8 @@ import kotlinx.coroutines.withContext
 
 class AttractionRepositoryImpl(
     private val localDataSource: AttractionLocalDataSource,
-    private val photoStorage: AttractionPhotoStorage
+    private val photoStorage: AttractionPhotoStorage,
+    private val backup: AttractionBackup
 ) : AttractionRepository {
 
     // Если используем API, здесь будет запрос к серверу
@@ -46,7 +50,14 @@ class AttractionRepositoryImpl(
     override suspend fun deleteAttraction(attractionId: String) = withContext(Dispatchers.IO) {
         val saved = localDataSource.getUserAttractions()
         // Вместе с меткой удаляем и её фотографию, иначе файл останется висеть во внутренней памяти
-        saved.firstOrNull { it.id == attractionId }?.let { photoStorage.delete(it.photoPath) }
+        saved.firstOrNull { it.id == attractionId }?.let { photoStorage.deletePhoto(it.photoName) }
         localDataSource.saveUserAttractions(saved.filterNot { it.id == attractionId })
     }
+
+    // Работа с архивом — это чтение и запись файлов, поэтому уводим её с главного потока
+    override suspend fun exportUserAttractions(target: Uri): Result<Int> =
+        withContext(Dispatchers.IO) { backup.export(target) }
+
+    override suspend fun importUserAttractions(source: Uri): Result<RestoreSummary> =
+        withContext(Dispatchers.IO) { backup.import(source) }
 }

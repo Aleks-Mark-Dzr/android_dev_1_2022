@@ -9,6 +9,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.InputStream
 import java.util.UUID
 
 /**
@@ -18,6 +19,9 @@ import java.util.UUID
  * не сохранил метку, постоянное место фото не занимает. При сохранении метки файл переносится
  * в filesDir — путь к нему остаётся рабочим и после перезапуска приложения, в отличие от
  * content-ссылки на галерею, разрешение на которую живёт только до перезагрузки.
+ *
+ * Наружу отдаём имя файла, а не полный путь: абсолютный путь зависит от устройства и профиля
+ * пользователя, поэтому в резервной копии он бесполезен.
  */
 class AttractionPhotoStorage(context: Context) {
 
@@ -55,9 +59,6 @@ class AttractionPhotoStorage(context: Context) {
         }
     }
 
-    private fun uriFor(file: File): Uri =
-        FileProvider.getUriForFile(appContext, "${appContext.packageName}$FILE_PROVIDER_SUFFIX", file)
-
     // Копируем выбранное в галерее изображение к себе: чужая content-ссылка ненадёжна
     fun copyToTemp(source: Uri): String? {
         val file = File(tempDir, "picked_${UUID.randomUUID()}.jpg")
@@ -74,19 +75,64 @@ class AttractionPhotoStorage(context: Context) {
         }
     }
 
+    // Фотография из резервной копии: распаковываем во временную папку, как снимок камеры
+    fun writeToTemp(source: InputStream): String? {
+        val file = File(tempDir, "restored_${UUID.randomUUID()}.jpg")
+        return try {
+            file.outputStream().use { output -> source.copyTo(output) }
+            file.absolutePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unpack photo", e)
+            file.delete()
+            null
+        }
+    }
+
     fun isTemporary(path: String): Boolean = File(path).parentFile?.name == TEMP_DIR_NAME
 
-    // Перенос временного файла в постоянное хранилище — вызывается при сохранении метки
+    /**
+     * Переносит временный файл в постоянное хранилище и возвращает имя сохранённой фотографии.
+     *
+     * Заодно уменьшает снимок: с камеры приходит 3–5 МБ, а метке хватает картинки, которая
+     * помещается в экран. Мелкие фотографии — это и место в памяти, и размер резервной копии.
+     */
     fun persist(path: String): String? {
         val source = File(path)
         if (!source.exists()) return null
-        if (!isTemporary(path)) return path
 
-        val target = File(photosDir, "photo_${UUID.randomUUID()}.jpg")
+        val bitmap = decodeScaled(path, STORED_PHOTO_MAX_SIZE_PX) ?: return persistOriginal(path)
+        val scaled = scaleDown(bitmap, STORED_PHOTO_MAX_SIZE_PX)
+        val target = File(photosDir, newPhotoName())
+
+        return try {
+            target.outputStream().use { output ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, STORED_PHOTO_QUALITY, output)
+            }
+            source.delete()
+            target.name
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist photo", e)
+            target.delete()
+            null
+        } finally {
+            scaled.recycle()
+        }
+    }
+
+    /**
+     * Переносит файл как есть — без пересжатия.
+     * Нужен для фотографий из резервной копии: они уже уменьшены, второй проход JPEG только
+     * ухудшит картинку.
+     */
+    fun persistOriginal(path: String): String? {
+        val source = File(path)
+        if (!source.exists()) return null
+
+        val target = File(photosDir, newPhotoName())
         return try {
             source.copyTo(target, overwrite = true)
             source.delete()
-            target.absolutePath
+            target.name
         } catch (e: Exception) {
             Log.e(TAG, "Failed to persist photo", e)
             target.delete()
@@ -94,15 +140,30 @@ class AttractionPhotoStorage(context: Context) {
         }
     }
 
-    fun delete(path: String?) {
+    /** Абсолютный путь сохранённой фотографии или null, если файла уже нет */
+    fun pathOf(photoName: String?): String? {
+        if (photoName.isNullOrBlank()) return null
+
+        val file = File(photosDir, photoName)
+        return if (file.exists()) file.absolutePath else null
+    }
+
+    fun exists(photoName: String?): Boolean = pathOf(photoName) != null
+
+    /** Удаляет сохранённую фотографию метки по её имени */
+    fun deletePhoto(photoName: String?) {
+        if (photoName.isNullOrBlank()) return
+        deleteFile(File(photosDir, photoName).absolutePath)
+    }
+
+    /** Удаляет файл по полному пути — так убираются временные снимки */
+    fun deleteFile(path: String?) {
         if (path.isNullOrBlank()) return
         val file = File(path)
         if (file.exists() && !file.delete()) {
             Log.e(TAG, "Failed to delete photo $path")
         }
     }
-
-    fun exists(path: String?): Boolean = !path.isNullOrBlank() && File(path).exists()
 
     /**
      * Читает фото уменьшенным: снимок камеры целиком в память класть незачем,
@@ -132,6 +193,25 @@ class AttractionPhotoStorage(context: Context) {
         return applyExifRotation(path, bitmap)
     }
 
+    /**
+     * Доводит картинку до нужного размера: inSampleSize умеет делить только вдвое,
+     * поэтому после декодирования сторона может остаться заметно больше требуемой.
+     */
+    private fun scaleDown(bitmap: Bitmap, maxSizePx: Int): Bitmap {
+        val longestSide = maxOf(bitmap.width, bitmap.height)
+        if (longestSide <= maxSizePx) return bitmap
+
+        val ratio = maxSizePx.toFloat() / longestSide
+        val scaled = Bitmap.createScaledBitmap(
+            bitmap,
+            (bitmap.width * ratio).toInt().coerceAtLeast(1),
+            (bitmap.height * ratio).toInt().coerceAtLeast(1),
+            true
+        )
+        if (scaled != bitmap) bitmap.recycle()
+        return scaled
+    }
+
     // Камера часто пишет снимок «как есть», а поворот телефона указывает в EXIF
     private fun applyExifRotation(path: String, bitmap: Bitmap): Bitmap {
         val degrees = try {
@@ -156,6 +236,11 @@ class AttractionPhotoStorage(context: Context) {
         return rotated
     }
 
+    private fun newPhotoName(): String = "photo_${UUID.randomUUID()}.jpg"
+
+    private fun uriFor(file: File): Uri =
+        FileProvider.getUriForFile(appContext, "${appContext.packageName}$FILE_PROVIDER_SUFFIX", file)
+
     data class CameraOutput(val path: String, val uri: Uri)
 
     private companion object {
@@ -163,5 +248,8 @@ class AttractionPhotoStorage(context: Context) {
         const val FILE_PROVIDER_SUFFIX = ".fileprovider"
         const val PHOTOS_DIR_NAME = "attraction_photos"
         const val TEMP_DIR_NAME = "attraction_photos_temp"
+        // Сохраняем фотографию уменьшенной: этого хватает и для диалога, и для полноэкранного просмотра
+        const val STORED_PHOTO_MAX_SIZE_PX = 1600
+        const val STORED_PHOTO_QUALITY = 85
     }
 }

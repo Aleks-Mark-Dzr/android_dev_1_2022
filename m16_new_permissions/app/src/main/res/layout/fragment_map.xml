@@ -39,6 +39,16 @@
         android:layout_alignParentEnd="true"
         android:layout_margin="16dp" />
 
+    <!-- Резервная копия меток: выгрузка в файл и восстановление из него -->
+    <Button
+        android:id="@+id/backupButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/backup_button"
+        android:layout_above="@id/addMarkerButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp" />
+
     <!-- Кнопка для добавления метки с текущей геопозицией -->
     <Button
         android:id="@+id/addMarkerButton"

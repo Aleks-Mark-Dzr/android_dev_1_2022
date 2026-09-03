@@ -1,12 +1,15 @@
 package com.example.m16_new_permissions.presentation.viewmodel
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.m16_new_permissions.domain.model.Attraction
 import com.example.m16_new_permissions.domain.repository.AttractionRepository
 import com.example.m16_new_permissions.domain.service.ILocationService
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
@@ -22,6 +25,10 @@ class MapViewModel(
     // Список достопримечательностей
     private val _attractions = MutableStateFlow<List<Attraction>>(emptyList())
     val attractions: StateFlow<List<Attraction>> get() = _attractions
+
+    // Итог работы с резервной копией: показываем его один раз, поэтому не StateFlow
+    private val _backupEvents = MutableSharedFlow<BackupEvent>()
+    val backupEvents: SharedFlow<BackupEvent> get() = _backupEvents
 
     init {
         loadAttractions()
@@ -59,7 +66,7 @@ class MapViewModel(
         name: String,
         description: String,
         geoPoint: GeoPoint,
-        photoPath: String? = null
+        photoName: String? = null
     ) {
         viewModelScope.launch {
             val attraction = Attraction(
@@ -68,7 +75,7 @@ class MapViewModel(
                 latitude = geoPoint.latitude,
                 longitude = geoPoint.longitude,
                 isUserAdded = true,
-                photoPath = photoPath
+                photoName = photoName
             )
             attractionRepository.addAttraction(attraction)
 
@@ -86,7 +93,7 @@ class MapViewModel(
         name: String,
         description: String,
         geoPoint: GeoPoint,
-        photoPath: String? = attraction.photoPath
+        photoName: String? = attraction.photoName
     ) {
         viewModelScope.launch {
             val updated = attraction.copy(
@@ -94,7 +101,9 @@ class MapViewModel(
                 description = description,
                 latitude = geoPoint.latitude,
                 longitude = geoPoint.longitude,
-                photoPath = photoPath
+                photoName = photoName,
+                // Отметка времени нужна восстановлению из копии: по ней видно, чья версия свежее
+                updatedAt = System.currentTimeMillis()
             )
             attractionRepository.updateAttraction(updated)
 
@@ -114,5 +123,38 @@ class MapViewModel(
 
             _attractions.value = attractionRepository.getAttractions()
         }
+    }
+
+    // Выгрузка меток с фотографиями в файл, который пользователь выбрал системным диалогом
+    fun exportBackup(target: Uri) {
+        viewModelScope.launch {
+            val event = attractionRepository.exportUserAttractions(target).fold(
+                onSuccess = { BackupEvent.Exported(it) },
+                onFailure = { BackupEvent.ExportFailed }
+            )
+            _backupEvents.emit(event)
+        }
+    }
+
+    fun importBackup(source: Uri) {
+        viewModelScope.launch {
+            val event = attractionRepository.importUserAttractions(source).fold(
+                onSuccess = { summary ->
+                    // Восстановленные метки должны сразу появиться на карте
+                    _attractions.value = attractionRepository.getAttractions()
+                    BackupEvent.Imported(summary.added, summary.updated)
+                },
+                onFailure = { BackupEvent.ImportFailed }
+            )
+            _backupEvents.emit(event)
+        }
+    }
+
+    /** Что случилось с резервной копией: текст сообщения подбирает экран */
+    sealed interface BackupEvent {
+        data class Exported(val count: Int) : BackupEvent
+        data class Imported(val added: Int, val updated: Int) : BackupEvent
+        object ExportFailed : BackupEvent
+        object ImportFailed : BackupEvent
     }
 }
