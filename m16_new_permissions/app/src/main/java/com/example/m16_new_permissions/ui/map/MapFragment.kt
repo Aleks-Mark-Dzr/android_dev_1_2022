@@ -12,6 +12,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -24,6 +26,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -45,6 +48,7 @@ import org.osmdroid.api.IMapController
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -69,6 +73,8 @@ class MapFragment : Fragment() {
             "application/octet-stream"
         )
         const val BACKUP_NAME_DATE_PATTERN = "yyyyMMdd_HHmm"
+        // Приближение, с которым показываем найденную поиском метку
+        const val SEARCH_RESULT_ZOOM = 17.0
     }
 
     private var _binding: FragmentMapBinding? = null
@@ -80,6 +86,9 @@ class MapFragment : Fragment() {
 
     // Разрешение запрашивалось ради добавления метки: после выдачи сразу открываем диалог
     private var pendingAddMarker = false
+
+    // Метки на карте по идентификатору: по нему поиск находит, чью подпись раскрыть
+    private val markersByAttractionId = mutableMapOf<String, Marker>()
 
     // Файл, в который камера сейчас делает снимок
     private var pendingCameraPhotoPath: String? = null
@@ -277,6 +286,74 @@ class MapFragment : Fragment() {
         }
 
         binding.backupButton.setOnClickListener { showBackupDialog() }
+
+        setupSearch()
+    }
+
+    /**
+     * Поиск метки по названию и описанию: пока пользователь набирает символы, под полем
+     * показываются подходящие метки, а по выбору одной из них карта переходит к её геопозиции.
+     */
+    private fun setupSearch() {
+        val searchField = binding.searchAutoCompleteTextView
+        // Варианты подбирает ViewModel — она знает актуальный список меток
+        val suggestionAdapter = AttractionSuggestionAdapter(
+            requireContext(),
+            mapViewModel::findAttractions
+        )
+        searchField.setAdapter(suggestionAdapter)
+
+        searchField.setOnItemClickListener { _, _, position, _ ->
+            suggestionAdapter.getItem(position)?.let { showAttractionOnMap(it) }
+        }
+
+        // По кнопке «Поиск» на клавиатуре переходим к первому подходящему варианту
+        searchField.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId != EditorInfo.IME_ACTION_SEARCH) return@setOnEditorActionListener false
+
+            val match = mapViewModel.findAttractions(searchField.text.toString()).firstOrNull()
+            if (match == null) {
+                showToast(getString(R.string.search_attraction_not_found))
+            } else {
+                // Без второго аргумента подстановка названия снова откроет список подсказок
+                searchField.setText(match.name, false)
+                searchField.dismissDropDown()
+                showAttractionOnMap(match)
+            }
+            true
+        }
+
+        searchField.doAfterTextChanged { text ->
+            binding.clearSearchButton.visibility =
+                if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+
+        binding.clearSearchButton.setOnClickListener {
+            searchField.setText("", false)
+            searchField.dismissDropDown()
+            hideKeyboard(searchField)
+            searchField.clearFocus()
+        }
+    }
+
+    // Переход к выбранной в поиске метке: клавиатура и список подсказок уступают место карте
+    private fun showAttractionOnMap(attraction: Attraction) {
+        val searchField = binding.searchAutoCompleteTextView
+        hideKeyboard(searchField)
+        searchField.clearFocus()
+
+        mapController.setZoom(SEARCH_RESULT_ZOOM)
+        mapController.animateTo(GeoPoint(attraction.latitude, attraction.longitude))
+
+        // Раскрываем подпись найденной метки, иначе среди соседних её не отличить
+        InfoWindow.closeAllInfoWindowsOn(mapView)
+        markersByAttractionId[attraction.id]?.showInfoWindow()
+        mapView.invalidate()
+    }
+
+    private fun hideKeyboard(view: View) {
+        ContextCompat.getSystemService(requireContext(), InputMethodManager::class.java)
+            ?.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     /**
@@ -767,6 +844,8 @@ class MapFragment : Fragment() {
         }
 
         mapView.overlays.removeIf { it is Marker }
+        // Ссылки на снятые с карты метки поиску уже ни к чему
+        markersByAttractionId.clear()
 
         attractions.forEach { attraction ->
             Log.d("MapFragment", "Adding marker at ${attraction.latitude}, ${attraction.longitude} for ${attraction.name}")
@@ -791,6 +870,7 @@ class MapFragment : Fragment() {
                 }
             }
             mapView.overlays.add(marker)
+            markersByAttractionId[attraction.id] = marker
         }
 
         mapView.invalidate()
@@ -837,6 +917,7 @@ class MapFragment : Fragment() {
         activePhotoController?.discardUncommittedPhoto()
         activePhotoController = null
 
+        markersByAttractionId.clear()
         locationOverlay.disableMyLocation()
         mapView.onDetach()
         super.onDestroyView()

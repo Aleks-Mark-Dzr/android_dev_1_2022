@@ -51,6 +51,11 @@
     <string name="backup_import_failed">Не удалось прочитать резервную копию</string>
     <string name="backup_no_file_manager">Не найдено приложение для выбора файла</string>
 
+    <!-- Поиск метки по названию и описанию -->
+    <string name="search_attraction_hint">Поиск метки</string>
+    <string name="search_attraction_clear">Очистить поиск</string>
+    <string name="search_attraction_not_found">Метки с таким названием не найдены</string>
+
     <!-- Отправка метки в другое приложение -->
     <string name="share_attraction_chooser_title">Поделиться меткой</string>
     <string name="share_attraction_coordinates">Координаты: %1$s, %2$s</string>

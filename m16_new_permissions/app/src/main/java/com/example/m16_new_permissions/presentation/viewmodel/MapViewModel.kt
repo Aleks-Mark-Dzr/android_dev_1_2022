@@ -125,6 +125,29 @@ class MapViewModel(
         }
     }
 
+    /**
+     * Подсказки поиска: метки, в названии или описании которых встречается набранный текст.
+     * Совпадения с начала названия идут первыми — обычно ищут именно их, — а список
+     * ограничиваем: длинный выпадающий перечень закрывает собой карту.
+     */
+    fun findAttractions(query: String): List<Attraction> {
+        val normalized = query.trim()
+        if (normalized.isEmpty()) return emptyList()
+
+        return _attractions.value
+            .filter {
+                it.name.contains(normalized, ignoreCase = true) ||
+                        it.description.contains(normalized, ignoreCase = true)
+            }
+            .sortedWith(
+                compareBy(
+                    { !it.name.startsWith(normalized, ignoreCase = true) },
+                    { it.name.lowercase() }
+                )
+            )
+            .take(MAX_SUGGESTIONS)
+    }
+
     // Выгрузка меток с фотографиями в файл, который пользователь выбрал системным диалогом
     fun exportBackup(target: Uri) {
         viewModelScope.launch {
@@ -148,6 +171,11 @@ class MapViewModel(
             )
             _backupEvents.emit(event)
         }
+    }
+
+    private companion object {
+        // Сколько подсказок показываем в выпадающем списке поиска
+        const val MAX_SUGGESTIONS = 10
     }
 
     /** Что случилось с резервной копией: текст сообщения подбирает экран */
