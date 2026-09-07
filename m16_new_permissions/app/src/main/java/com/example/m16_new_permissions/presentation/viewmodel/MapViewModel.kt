@@ -61,12 +61,12 @@ class MapViewModel(
     fun resolveCurrentLocation(): GeoPoint? =
         locationService.currentLocation.value ?: locationService.getLastKnownLocation()
 
-    // Добавление метки с описанием и фотографией в указанной точке
+    // Добавление метки с описанием и фотографиями в указанной точке
     fun addAttraction(
         name: String,
         description: String,
         geoPoint: GeoPoint,
-        photoName: String? = null
+        photoNames: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             val attraction = Attraction(
@@ -75,7 +75,7 @@ class MapViewModel(
                 latitude = geoPoint.latitude,
                 longitude = geoPoint.longitude,
                 isUserAdded = true,
-                photoName = photoName
+                photoNames = photoNames
             )
             attractionRepository.addAttraction(attraction)
 
@@ -86,14 +86,14 @@ class MapViewModel(
         }
     }
 
-    // Редактирование сохранённой метки: название, описание, координаты и фотография.
-    // Фото по умолчанию остаётся прежним — при перетаскивании метки его менять не нужно
+    // Редактирование сохранённой метки: название, описание, координаты и фотографии.
+    // Фото по умолчанию остаются прежними — при перетаскивании метки их менять не нужно
     fun updateAttraction(
         attraction: Attraction,
         name: String,
         description: String,
         geoPoint: GeoPoint,
-        photoName: String? = attraction.photoName
+        photoNames: List<String> = attraction.photoNames
     ) {
         viewModelScope.launch {
             val updated = attraction.copy(
@@ -101,7 +101,7 @@ class MapViewModel(
                 description = description,
                 latitude = geoPoint.latitude,
                 longitude = geoPoint.longitude,
-                photoName = photoName,
+                photoNames = photoNames,
                 // Отметка времени нужна восстановлению из копии: по ней видно, чья версия свежее
                 updatedAt = System.currentTimeMillis()
             )

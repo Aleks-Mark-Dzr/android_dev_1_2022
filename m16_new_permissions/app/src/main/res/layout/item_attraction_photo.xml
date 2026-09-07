@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Миниатюра одной фотографии метки: нажатие открывает её целиком, крестик убирает из метки -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="96dp"
+    android:layout_height="96dp"
+    android:layout_marginEnd="8dp">
+
+    <ImageView
+        android:id="@+id/photoThumbnailImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="@string/attraction_photo_description" />
+
+    <ImageButton
+        android:id="@+id/removePhotoButton"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:padding="2dp"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_remove_photo"
+        android:contentDescription="@string/action_remove_photo" />
+</FrameLayout>

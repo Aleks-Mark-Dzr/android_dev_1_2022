@@ -21,7 +21,8 @@ import java.util.UUID
  * content-ссылки на галерею, разрешение на которую живёт только до перезагрузки.
  *
  * Наружу отдаём имя файла, а не полный путь: абсолютный путь зависит от устройства и профиля
- * пользователя, поэтому в резервной копии он бесполезен.
+ * пользователя, поэтому в резервной копии он бесполезен. К одной метке можно приложить несколько
+ * фотографий — каждая лежит отдельным файлом, а их порядок хранит сама метка.
  */
 class AttractionPhotoStorage(context: Context) {
 
@@ -148,13 +149,26 @@ class AttractionPhotoStorage(context: Context) {
         return if (file.exists()) file.absolutePath else null
     }
 
-    fun exists(photoName: String?): Boolean = pathOf(photoName) != null
+    /**
+     * Абсолютные пути фотографий метки в том же порядке, в каком они к ней приложены.
+     * Фотографии, файла которых уже нет, из списка выпадают.
+     */
+    fun pathsOf(photoNames: List<String>): List<String> = photoNames.mapNotNull(::pathOf)
+
+    /** Имя сохранённой фотографии по её пути или null, если файл лежит не в постоянной папке */
+    fun storedNameOf(path: String): String? {
+        val file = File(path)
+        return if (file.parentFile?.name == PHOTOS_DIR_NAME) file.name else null
+    }
 
     /** Удаляет сохранённую фотографию метки по её имени */
     fun deletePhoto(photoName: String?) {
         if (photoName.isNullOrBlank()) return
         deleteFile(File(photosDir, photoName).absolutePath)
     }
+
+    /** Удаляет сразу все перечисленные фотографии — так метка уходит вместе со своим альбомом */
+    fun deletePhotos(photoNames: Collection<String>) = photoNames.forEach(::deletePhoto)
 
     /** Удаляет файл по полному пути — так убираются временные снимки */
     fun deleteFile(path: String?) {

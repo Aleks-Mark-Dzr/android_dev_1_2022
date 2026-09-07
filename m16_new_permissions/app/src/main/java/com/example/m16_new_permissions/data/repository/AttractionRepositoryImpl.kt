@@ -49,8 +49,8 @@ class AttractionRepositoryImpl(
 
     override suspend fun deleteAttraction(attractionId: String) = withContext(Dispatchers.IO) {
         val saved = localDataSource.getUserAttractions()
-        // Вместе с меткой удаляем и её фотографию, иначе файл останется висеть во внутренней памяти
-        saved.firstOrNull { it.id == attractionId }?.let { photoStorage.deletePhoto(it.photoName) }
+        // Вместе с меткой удаляем и её фотографии, иначе файлы останутся висеть во внутренней памяти
+        saved.firstOrNull { it.id == attractionId }?.let { photoStorage.deletePhotos(it.photoNames) }
         localDataSource.saveUserAttractions(saved.filterNot { it.id == attractionId })
     }
 

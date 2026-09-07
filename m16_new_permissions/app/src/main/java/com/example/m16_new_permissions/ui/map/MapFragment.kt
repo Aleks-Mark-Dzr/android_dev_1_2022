@@ -16,7 +16,9 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,8 +64,9 @@ class MapFragment : Fragment() {
         const val MY_LOCATION_ICON_SIZE_DP = 24
         const val MAX_LATITUDE = 90.0
         const val MAX_LONGITUDE = 180.0
-        // Размеры, до которых уменьшаем фотографию при показе: в диалоге и в полноэкранном просмотре
-        const val PHOTO_PREVIEW_MAX_SIZE_PX = 720
+        // Размеры, до которых уменьшаем фотографию при показе: миниатюра в диалоге
+        // и полноэкранный просмотр. Миниатюр может быть много, поэтому они совсем небольшие
+        const val PHOTO_THUMBNAIL_MAX_SIZE_PX = 240
         const val PHOTO_FULL_MAX_SIZE_PX = 1600
         const val BACKUP_MIME_TYPE = "application/zip"
         // Диск и часть файловых менеджеров отдают zip под другим типом, поэтому принимаем все три
@@ -93,7 +96,7 @@ class MapFragment : Fragment() {
     // Файл, в который камера сейчас делает снимок
     private var pendingCameraPhotoPath: String? = null
 
-    // Открытый диалог метки: именно ему принадлежит выбранная фотография
+    // Открытый диалог метки: именно ему принадлежат выбранные фотографии
     private var activePhotoController: AttractionPhotoController? = null
 
     private val locationService: ILocationService by lazy { LocationService(requireContext()) }
@@ -145,7 +148,7 @@ class MapFragment : Fragment() {
         pendingCameraPhotoPath = null
         val controller = activePhotoController
         if (success && path != null && controller != null) {
-            controller.setPhoto(path)
+            controller.addPhoto(path)
         } else {
             // Съёмку отменили или диалог уже закрыт — пустой файл не нужен
             photoStorage.deleteFile(path)
@@ -163,7 +166,7 @@ class MapFragment : Fragment() {
         if (copiedPath == null) {
             showToast(getString(R.string.photo_save_failed))
         } else {
-            controller.setPhoto(copiedPath)
+            controller.addPhoto(copiedPath)
         }
     }
 
@@ -450,8 +453,8 @@ class MapFragment : Fragment() {
             dialogView.findViewById<TextView>(R.id.dragHintTextView).visibility = View.VISIBLE
         }
 
-        // Фотографией диалога управляет отдельный контроллер: он же убирает за собой временные файлы
-        val photoController = AttractionPhotoController(dialogView, attraction?.photoName)
+        // Фотографиями диалога управляет отдельный контроллер: он же убирает за собой временные файлы
+        val photoController = AttractionPhotoController(dialogView, attraction?.photoNames.orEmpty())
         activePhotoController = photoController
 
         // Делимся тем, что сейчас в полях диалога: метку не обязательно сначала сохранять
@@ -477,7 +480,7 @@ class MapFragment : Fragment() {
                 name,
                 descriptionEditText.text.toString().trim(),
                 GeoPoint(latitude, longitude),
-                photoController.currentPhotoPath
+                photoController.currentPhotoPaths
             )
         }
 
@@ -517,12 +520,12 @@ class MapFragment : Fragment() {
                 val description = descriptionEditText.text.toString().trim()
                 val position = GeoPoint(latitude, longitude)
                 // Фото переносим в постоянное хранилище только сейчас, когда метка действительно сохраняется
-                val photoName = photoController.commit()
+                val photoNames = photoController.commit()
                 if (attraction == null) {
-                    mapViewModel.addAttraction(name, description, position, photoName)
+                    mapViewModel.addAttraction(name, description, position, photoNames)
                     showToast(getString(R.string.marker_added, name))
                 } else {
-                    mapViewModel.updateAttraction(attraction, name, description, position, photoName)
+                    mapViewModel.updateAttraction(attraction, name, description, position, photoNames)
                     showToast(getString(R.string.marker_updated, name))
                 }
                 dialog.dismiss()
@@ -537,7 +540,7 @@ class MapFragment : Fragment() {
         }
 
         dialog.setOnDismissListener {
-            photoController.discardUncommittedPhoto()
+            photoController.discardUncommittedPhotos()
             if (activePhotoController === photoController) {
                 activePhotoController = null
             }
@@ -560,103 +563,141 @@ class MapFragment : Fragment() {
     }
 
     /**
-     * Фотография метки внутри диалога: выбор источника, предпросмотр, удаление
+     * Фотографии метки внутри диалога: выбор источника, лента миниатюр, удаление
      * и уборка временных файлов, если метку в итоге не сохранили.
+     *
+     * Фотографий у метки может быть сколько угодно, порядок задаёт сам пользователь —
+     * новая встаёт в конец ленты.
      */
     private inner class AttractionPhotoController(
         dialogView: View,
-        private val savedPhotoName: String?
+        private val savedPhotoNames: List<String>
     ) {
-        private val photoImageView: ImageView = dialogView.findViewById(R.id.photoImageView)
+        private val photosScrollView: View = dialogView.findViewById(R.id.photosScrollView)
+        private val photosContainer: LinearLayout = dialogView.findViewById(R.id.photosContainer)
         private val photoHintTextView: TextView = dialogView.findViewById(R.id.photoHintTextView)
         private val addPhotoButton: Button = dialogView.findViewById(R.id.addPhotoButton)
-        private val removePhotoButton: Button = dialogView.findViewById(R.id.removePhotoButton)
+        private val removeAllPhotosButton: Button = dialogView.findViewById(R.id.removeAllPhotosButton)
 
-        // Фото, выбранное в диалоге: полный путь, потому что пока метка не сохранена,
-        // это может быть временный файл в кэше
-        private var photoPath: String? = photoStorage.pathOf(savedPhotoName)
+        // Фотографии диалога: полные пути, потому что пока метка не сохранена,
+        // среди них есть временные файлы в кэше
+        private val photoPaths: MutableList<String> =
+            photoStorage.pathsOf(savedPhotoNames).toMutableList()
 
-        // После сохранения метки временный файл трогать нельзя — он уже стал фотографией метки
+        // После сохранения метки временные файлы трогать нельзя — они уже стали её фотографиями
         private var isCommitted = false
 
-        /** Фотография, которую диалог показывает прямо сейчас: ею и делимся */
-        val currentPhotoPath: String?
-            get() = photoPath
+        /** Фотографии, которые диалог показывает прямо сейчас: ими и делимся */
+        val currentPhotoPaths: List<String>
+            get() = photoPaths.toList()
 
         init {
             addPhotoButton.setOnClickListener { showPhotoSourceDialog() }
-            removePhotoButton.setOnClickListener {
-                setPhoto(null)
-                showToast(getString(R.string.photo_removed))
+            removeAllPhotosButton.setOnClickListener {
+                removeAllPhotos()
+                showToast(getString(R.string.photos_all_removed))
             }
-            photoImageView.setOnClickListener {
-                photoPath?.let { showPhotoPreviewDialog(it) }
-            }
-            bindPhoto()
+            bindPhotos()
         }
 
-        fun setPhoto(path: String?) {
-            val previous = photoPath
-            // Заменённый или убранный временный файл сразу удаляем: в метку он уже не попадёт
-            if (previous != null && previous != path && photoStorage.isTemporary(previous)) {
-                photoStorage.deleteFile(previous)
-            }
-            photoPath = path
-            bindPhoto()
+        /** Добавляет к метке ещё одну фотографию — снятую камерой или выбранную в галерее */
+        fun addPhoto(path: String) {
+            photoPaths += path
+            bindPhotos()
         }
 
-        /** Закрепляет фотографию за меткой и возвращает имя файла, которое нужно сохранить */
-        fun commit(): String? {
-            val current = photoPath
+        private fun removePhoto(path: String) {
+            photoPaths.remove(path)
+            // Убранный временный файл сразу удаляем: в метку он уже не попадёт
+            if (photoStorage.isTemporary(path)) {
+                photoStorage.deleteFile(path)
+            }
+            bindPhotos()
+        }
+
+        private fun removeAllPhotos() {
+            // Ленту перебираем один раз: перерисовывать её на каждой убранной фотографии незачем
+            photoPaths.filter(photoStorage::isTemporary).forEach(photoStorage::deleteFile)
+            photoPaths.clear()
+            bindPhotos()
+        }
+
+        /** Закрепляет фотографии за меткой и возвращает имена файлов, которые нужно сохранить */
+        fun commit(): List<String> {
             isCommitted = true
 
-            val persisted = when {
-                current == null -> null
-                photoStorage.isTemporary(current) -> photoStorage.persist(current)
-                // Фотографию не меняли — она уже лежит в хранилище под прежним именем
-                else -> savedPhotoName
+            var failed = false
+            val persisted = photoPaths.mapNotNull { path ->
+                val photoName = if (photoStorage.isTemporary(path)) {
+                    photoStorage.persist(path)
+                } else {
+                    // Фотографию не меняли — она уже лежит в хранилище под своим именем
+                    photoStorage.storedNameOf(path)
+                }
+                if (photoName == null) failed = true
+                photoName
             }
-            if (current != null && persisted == null) {
-                // Перенести файл не удалось — оставляем метке прежнюю фотографию
-                showToast(getString(R.string.photo_save_failed))
-                return savedPhotoName
-            }
+            // Перенести удалось не всё — метка сохранится с теми фотографиями, что дошли
+            if (failed) showToast(getString(R.string.photo_save_failed))
 
-            // Прежнее фото метки больше не используется — освобождаем место
-            if (savedPhotoName != null && savedPhotoName != persisted) {
-                photoStorage.deletePhoto(savedPhotoName)
-            }
+            // Убранные из метки фотографии больше не используются — освобождаем место
+            photoStorage.deletePhotos(savedPhotoNames - persisted.toSet())
             return persisted
         }
 
-        /** Диалог закрыли без сохранения: снятый или выбранный файл остаётся мусором */
-        fun discardUncommittedPhoto() {
-            val current = photoPath
-            if (!isCommitted && current != null && photoStorage.isTemporary(current)) {
-                photoStorage.deleteFile(current)
-                photoPath = null
-            }
+        /** Диалог закрыли без сохранения: снятые и выбранные файлы остаются мусором */
+        fun discardUncommittedPhotos() {
+            if (isCommitted) return
+
+            val temporary = photoPaths.filter(photoStorage::isTemporary)
+            photoPaths -= temporary.toSet()
+            temporary.forEach(photoStorage::deleteFile)
         }
 
-        private fun bindPhoto() {
-            val path = photoPath
-            val bitmap = path?.let { photoStorage.decodeScaled(it, PHOTO_PREVIEW_MAX_SIZE_PX) }
+        // Лента миниатюр собирается заново: так порядок фотографий совпадает со списком путей
+        private fun bindPhotos() {
+            photosContainer.removeAllViews()
 
-            if (bitmap == null) {
-                // Файл могли удалить извне — тогда считаем, что фотографии у метки нет
-                photoPath = null
-                photoImageView.setImageDrawable(null)
-                photoImageView.visibility = View.GONE
-                photoHintTextView.setText(R.string.attraction_photo_empty)
-                addPhotoButton.setText(R.string.action_add_photo)
-                removePhotoButton.visibility = View.GONE
-            } else {
-                photoImageView.setImageBitmap(bitmap)
-                photoImageView.visibility = View.VISIBLE
-                photoHintTextView.setText(R.string.attraction_photo_hint)
-                addPhotoButton.setText(R.string.action_change_photo)
-                removePhotoButton.visibility = View.VISIBLE
+            photoPaths.toList().forEach { path ->
+                val bitmap = photoStorage.decodeScaled(path, PHOTO_THUMBNAIL_MAX_SIZE_PX)
+                if (bitmap == null) {
+                    // Файл могли удалить извне — тогда такой фотографии у метки больше нет
+                    photoPaths.remove(path)
+                    return@forEach
+                }
+                photosContainer.addView(createThumbnail(path, bitmap))
             }
+
+            val count = photoPaths.size
+            photosScrollView.visibility = if (count == 0) View.GONE else View.VISIBLE
+            photoHintTextView.text = when (count) {
+                0 -> getString(R.string.attraction_photo_empty)
+                1 -> getString(R.string.attraction_photo_hint)
+                else -> getString(R.string.attraction_photos_hint, count)
+            }
+            addPhotoButton.setText(
+                if (count == 0) R.string.action_add_photo else R.string.action_add_more_photo
+            )
+            // Пока фотография одна, хватает крестика на самой миниатюре
+            removeAllPhotosButton.visibility = if (count > 1) View.VISIBLE else View.GONE
+        }
+
+        private fun createThumbnail(path: String, bitmap: Bitmap): View {
+            val itemView = layoutInflater.inflate(R.layout.item_attraction_photo, photosContainer, false)
+
+            itemView.findViewById<ImageView>(R.id.photoThumbnailImageView).apply {
+                setImageBitmap(bitmap)
+                // Индекс берём в момент нажатия: соседние фотографии к этому времени могли убрать
+                setOnClickListener {
+                    showPhotoPreviewDialog(photoPaths.toList(), photoPaths.indexOf(path))
+                }
+            }
+            itemView.findViewById<ImageButton>(R.id.removePhotoButton).setOnClickListener {
+                removePhoto(path)
+                showToast(getString(R.string.photo_removed))
+            }
+
+            return itemView
         }
     }
 
@@ -716,46 +757,80 @@ class MapFragment : Fragment() {
         }
     }
 
-    // Фотография метки во весь экран
-    private fun showPhotoPreviewDialog(path: String) {
-        val bitmap = photoStorage.decodeScaled(path, PHOTO_FULL_MAX_SIZE_PX)
-        if (bitmap == null) {
-            showToast(getString(R.string.photo_load_failed))
-            return
-        }
+    /**
+     * Фотографии метки во весь экран, начиная с выбранной.
+     * Когда фотографий несколько, нажатие по картинке переключает на следующую по кругу:
+     * листать так же, как открывали, привычнее, чем искать отдельные кнопки.
+     */
+    private fun showPhotoPreviewDialog(paths: List<String>, startIndex: Int) {
+        if (paths.isEmpty()) return
+        var index = startIndex.coerceIn(paths.indices)
 
         val previewView = layoutInflater.inflate(R.layout.dialog_photo_preview, null)
-        previewView.findViewById<ImageView>(R.id.previewImageView).setImageBitmap(bitmap)
-        AlertDialog.Builder(requireContext())
+        val previewImageView = previewView.findViewById<ImageView>(R.id.previewImageView)
+        val dialog = AlertDialog.Builder(requireContext())
             .setView(previewView)
             .setPositiveButton(R.string.action_close, null)
-            .show()
+            .create()
+
+        // Показывает фотографию под текущим индексом; false — файл прочитать не удалось
+        fun showCurrentPhoto(): Boolean {
+            val bitmap = photoStorage.decodeScaled(paths[index], PHOTO_FULL_MAX_SIZE_PX)
+            if (bitmap == null) {
+                showToast(getString(R.string.photo_load_failed))
+                return false
+            }
+
+            previewImageView.setImageBitmap(bitmap)
+            if (paths.size > 1) {
+                dialog.setTitle(getString(R.string.attraction_photo_position, index + 1, paths.size))
+            }
+            return true
+        }
+
+        if (paths.size > 1) {
+            previewImageView.setOnClickListener {
+                index = (index + 1) % paths.size
+                if (!showCurrentPhoto()) dialog.dismiss()
+            }
+        }
+
+        if (!showCurrentPhoto()) return
+        dialog.show()
     }
 
     /**
      * Отправляет метку в другое приложение: текстом уходят название, описание, координаты
-     * и ссылка на карту, а при наличии фотографии к ним прикладывается и она.
+     * и ссылка на карту, а при наличии фотографий к ним прикладываются и они.
      */
     private fun shareAttraction(
         name: String,
         description: String,
         position: GeoPoint,
-        photoPath: String?
+        photoPaths: List<String>
     ) {
         // Фото могли удалить извне — тогда делимся одним текстом
-        val photoUri = photoPath?.let { photoStorage.shareUri(it) }
+        val photoUris = ArrayList(photoPaths.mapNotNull { photoStorage.shareUri(it) })
 
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        val shareIntent = when {
+            photoUris.isEmpty() -> Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
+
+            // Одно вложение отправляем обычным ACTION_SEND: его принимают все приложения,
+            // а несколько файлов умеет передать только ACTION_SEND_MULTIPLE
+            photoUris.size == 1 -> Intent(Intent.ACTION_SEND).apply {
+                type = "image/jpeg"
+                putExtra(Intent.EXTRA_STREAM, photoUris.first())
+            }
+
+            else -> Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "image/jpeg"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, photoUris)
+            }
+        }.apply {
             putExtra(Intent.EXTRA_SUBJECT, name)
             putExtra(Intent.EXTRA_TEXT, buildShareText(name, description, position))
-            if (photoUri == null) {
-                type = "text/plain"
-            } else {
-                type = "image/jpeg"
-                putExtra(Intent.EXTRA_STREAM, photoUri)
-                // Наши файлы лежат в личной папке: без этого флага получатель их не прочитает
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            // Наши файлы лежат в личной папке: без этого флага получатель их не прочитает
+            if (photoUris.isNotEmpty()) addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
         try {
@@ -876,11 +951,17 @@ class MapFragment : Fragment() {
         mapView.invalidate()
     }
 
-    // У метки с фотографией в подписи отмечаем, что фото можно открыть в её диалоге
+    // У метки с фотографиями в подписи отмечаем, сколько их и что открыть их можно в её диалоге
     private fun buildMarkerSnippet(attraction: Attraction): String {
-        if (!photoStorage.exists(attraction.photoName)) return attraction.description
+        // Считаем только те фотографии, файлы которых на месте
+        val photoCount = photoStorage.pathsOf(attraction.photoNames).size
+        if (photoCount == 0) return attraction.description
 
-        return listOf(attraction.description, getString(R.string.attraction_photo_attached))
+        val photoNote =
+            if (photoCount == 1) getString(R.string.attraction_photo_attached)
+            else getString(R.string.attraction_photos_attached, photoCount)
+
+        return listOf(attraction.description, photoNote)
             .filter { it.isNotBlank() }
             .joinToString("\n")
     }
@@ -912,9 +993,9 @@ class MapFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        // Фрагмент уходит вместе с открытым диалогом — незакреплённое фото удаляем.
+        // Фрагмент уходит вместе с открытым диалогом — незакреплённые фото удаляем.
         // Файл незавершённого снимка не трогаем: камера может писать в него прямо сейчас
-        activePhotoController?.discardUncommittedPhoto()
+        activePhotoController?.discardUncommittedPhotos()
         activePhotoController = null
 
         markersByAttractionId.clear()

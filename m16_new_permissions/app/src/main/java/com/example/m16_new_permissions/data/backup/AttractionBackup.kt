@@ -25,7 +25,7 @@ import java.util.zip.ZipOutputStream
  * Структура архива:
  * ```
  * attractions.json          — версия формата и список меток
- * photos/photo_<uuid>.jpg   — фотографии, по файлу на метку
+ * photos/photo_<uuid>.jpg   — фотографии: у метки их может быть несколько
  * ```
  */
 class AttractionBackup(
@@ -53,13 +53,14 @@ class AttractionBackup(
                     zip.closeEntry()
 
                     attractions.forEach { attraction ->
-                        val photoName = attraction.photoName ?: return@forEach
-                        // Фотографию могли удалить извне — тогда метка уедет в копию без неё
-                        val photoPath = photoStorage.pathOf(photoName) ?: return@forEach
+                        attraction.photoNames.forEach photo@{ photoName ->
+                            // Фотографию могли удалить извне — тогда метка уедет в копию без неё
+                            val photoPath = photoStorage.pathOf(photoName) ?: return@photo
 
-                        zip.putNextEntry(ZipEntry("$PHOTOS_DIR/$photoName"))
-                        File(photoPath).inputStream().use { it.copyTo(zip) }
-                        zip.closeEntry()
+                            zip.putNextEntry(ZipEntry("$PHOTOS_DIR/$photoName"))
+                            File(photoPath).inputStream().use { it.copyTo(zip) }
+                            zip.closeEntry()
+                        }
                     }
                 }
             }
@@ -161,7 +162,9 @@ class AttractionBackup(
         var updated = 0
         var skipped = 0
 
-        imported.forEach { candidate ->
+        imported.forEach { raw ->
+            // В копии, снятой старой версией приложения, у метки одна фотография отдельным полем
+            val candidate = raw.withNormalizedPhotos()
             val existingIndex = result.indexOfFirst { it.id == candidate.id }
             val existing = result.getOrNull(existingIndex)
             if (existing != null && candidate.updatedAt <= existing.updatedAt) {
@@ -169,23 +172,22 @@ class AttractionBackup(
                 return@forEach
             }
 
-            // Метка без фотографии в архиве восстанавливается без неё — путь из чужого телефона не годится
-            val photoName = candidate.photoName?.let { archiveName ->
+            // Фотографии, которых в архиве не оказалось, метка теряет: путь из чужого телефона не годится
+            val photoNames = candidate.photoNames.mapNotNull { archiveName ->
                 storedPhotos[archiveName] ?: unpackedPhotos[archiveName]
                     ?.let(photoStorage::persistOriginal)
                     ?.also { storedPhotos[archiveName] = it }
             }
             // Восстановленная метка всегда пользовательская: предустановленные заданы в коде
-            val restored = candidate.copy(isUserAdded = true, photoName = photoName)
+            val restored = candidate.copy(isUserAdded = true, photoNames = photoNames)
 
             if (existing == null) {
                 result += restored
                 added++
             } else {
                 result[existingIndex] = restored
-                if (existing.photoName != null && existing.photoName != photoName) {
-                    photoStorage.deletePhoto(existing.photoName)
-                }
+                // Фотографии прежней версии метки, которых нет в восстановленной, больше не нужны
+                photoStorage.deletePhotos(existing.photoNames - photoNames.toSet())
                 updated++
             }
         }
@@ -206,7 +208,7 @@ class AttractionBackup(
 
     private companion object {
         const val TAG = "AttractionBackup"
-        const val FORMAT_VERSION = 1
+        const val FORMAT_VERSION = 2
         const val ENTRY_ATTRACTIONS = "attractions.json"
         const val PHOTOS_DIR = "photos"
     }

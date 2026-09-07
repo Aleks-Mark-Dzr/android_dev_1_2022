@@ -47,9 +47,10 @@ class AttractionLocalDataSource(context: Context) {
      * Приводит запись к текущему формату.
      *
      * Метки, сохранённые до появления id, Gson отдаёт без идентификатора — выдаём его сами,
-     * иначе такую метку нельзя отредактировать или удалить. Фотография раньше хранилась
-     * абсолютным путём: оставляем от него только имя файла, чтобы запись пережила перенос
-     * на другое устройство. Метки без времени изменения считаем самыми старыми.
+     * иначе такую метку нельзя отредактировать или удалить. Единственную фотографию старого
+     * формата переносим в список фотографий, а от абсолютных путей оставляем имена файлов,
+     * чтобы запись пережила перенос на другое устройство.
+     * Метки без времени изменения считаем самыми старыми.
      */
     private fun migrate(attraction: Attraction): Attraction {
         var result = attraction
@@ -58,12 +59,7 @@ class AttractionLocalDataSource(context: Context) {
             result = result.copy(id = UUID.randomUUID().toString())
         }
 
-        val photoName = result.photoName
-        if (photoName != null && (photoName.contains('/') || photoName.contains('\\'))) {
-            result = result.copy(photoName = photoName.substringAfterLast('/').substringAfterLast('\\'))
-        }
-
-        return result
+        return result.withNormalizedPhotos()
     }
 
     private companion object {
