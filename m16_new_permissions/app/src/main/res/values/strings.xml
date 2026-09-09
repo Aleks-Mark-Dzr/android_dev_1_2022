@@ -14,6 +14,11 @@
     <string name="location_unavailable">Текущее местоположение ещё не определено</string>
     <string name="marker_added">Метка «%1$s» добавлена</string>
 
+    <!-- Добавление метки в указанной на карте точке -->
+    <string name="pick_on_map_button">Метка на карте</string>
+    <string name="pick_on_map_cancel">Отменить выбор</string>
+    <string name="pick_on_map_hint">Нажмите на карту — метка встанет в указанную точку. Долгое нажатие по карте работает так же и без этого режима</string>
+
     <!-- Редактирование и удаление сохранённой метки -->
     <string name="edit_marker_dialog_title">Редактирование метки</string>
     <string name="edit_marker_drag_hint">Метку можно перетащить по карте долгим нажатием</string>

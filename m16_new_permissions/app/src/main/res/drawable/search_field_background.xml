@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Подложка поля поиска: без неё текст теряется на тайлах карты -->
+<!-- Подложка поля поиска и подсказок поверх карты: без неё текст теряется на тайлах -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/white" />

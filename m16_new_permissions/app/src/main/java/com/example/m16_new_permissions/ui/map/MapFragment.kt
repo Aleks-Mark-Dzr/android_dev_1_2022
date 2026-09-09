@@ -47,8 +47,10 @@ import com.example.m16_new_permissions.presentation.viewmodel.MapViewModelFactor
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.osmdroid.api.IMapController
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
@@ -89,6 +91,9 @@ class MapFragment : Fragment() {
 
     // Разрешение запрашивалось ради добавления метки: после выдачи сразу открываем диалог
     private var pendingAddMarker = false
+
+    // Включён выбор точки на карте: следующее нажатие по ней ставит метку
+    private var isPickingPointOnMap = false
 
     // Метки на карте по идентификатору: по нему поиск находит, чью подпись раскрыть
     private val markersByAttractionId = mutableMapOf<String, Marker>()
@@ -205,6 +210,20 @@ class MapFragment : Fragment() {
         }
     }
 
+    /**
+     * Нажатия по самой карте: по ним метка ставится в указанной точке.
+     * Долгое нажатие работает всегда, обычное — только при включённом выборе точки:
+     * иначе метка появлялась бы от любого случайного касания карты.
+     */
+    private val mapPointReceiver = object : MapEventsReceiver {
+        override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+            if (!isPickingPointOnMap) return false
+            return startAttractionAtPickedPoint(p)
+        }
+
+        override fun longPressHelper(p: GeoPoint?): Boolean = startAttractionAtPickedPoint(p)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -220,6 +239,10 @@ class MapFragment : Fragment() {
         mapController = mapView.controller
         mapController.setZoom(5.0)
         mapController.setCenter(GeoPoint(48.8584, 2.2945)) // Центрируйте на интересующей области
+
+        // Слой нажатий по карте кладём самым нижним: метки и слой местоположения лежат выше
+        // и по-прежнему первыми получают касания по себе
+        mapView.overlays.add(MapEventsOverlay(mapPointReceiver))
 
         // Настройка слоя для отображения текущего местоположения
         locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
@@ -288,9 +311,44 @@ class MapFragment : Fragment() {
             }
         }
 
+        // Метка в указанной на карте точке: геопозиция для неё не нужна,
+        // поэтому разрешения здесь не спрашиваем
+        binding.pickOnMapButton.setOnClickListener { setPickPointMode(!isPickingPointOnMap) }
+
         binding.backupButton.setOnClickListener { showBackupDialog() }
 
         setupSearch()
+    }
+
+    /**
+     * Режим выбора точки: пока он включён, обычное нажатие по карте открывает диалог новой метки.
+     * Повторное нажатие кнопки его выключает — поэтому она же служит отменой.
+     */
+    private fun setPickPointMode(enabled: Boolean) {
+        isPickingPointOnMap = enabled
+        binding.pickPointHintTextView.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding.pickOnMapButton.setText(
+            if (enabled) R.string.pick_on_map_cancel else R.string.pick_on_map_button
+        )
+
+        if (enabled) {
+            // Клавиатура и подсказки поиска закрыли бы собой карту, по которой сейчас выбирают точку
+            val searchField = binding.searchAutoCompleteTextView
+            searchField.dismissDropDown()
+            hideKeyboard(searchField)
+            searchField.clearFocus()
+        }
+    }
+
+    // Новая метка в точке, которую указали на карте; false — точку определить не удалось
+    private fun startAttractionAtPickedPoint(geoPoint: GeoPoint?): Boolean {
+        if (geoPoint == null || _binding == null) return false
+
+        setPickPointMode(false)
+        // Подпись открытой метки перекрывает выбранное место — она уже не о нём
+        InfoWindow.closeAllInfoWindowsOn(mapView)
+        showAttractionDialog(geoPoint)
+        return true
     }
 
     /**
@@ -997,6 +1055,9 @@ class MapFragment : Fragment() {
         // Файл незавершённого снимка не трогаем: камера может писать в него прямо сейчас
         activePhotoController?.discardUncommittedPhotos()
         activePhotoController = null
+
+        // Кнопка и подсказка уйдут вместе с разметкой — режим выбора точки не должен их пережить
+        isPickingPointOnMap = false
 
         markersByAttractionId.clear()
         locationOverlay.disableMyLocation()

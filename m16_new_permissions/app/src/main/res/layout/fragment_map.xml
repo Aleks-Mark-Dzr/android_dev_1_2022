@@ -80,6 +80,34 @@
         android:layout_alignParentEnd="true"
         android:layout_margin="16dp" />
 
+    <!-- Подсказка режима выбора: показывается, пока метку ждут нажатием по карте -->
+    <TextView
+        android:id="@+id/pickPointHintTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/pickOnMapButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/search_field_background"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:text="@string/pick_on_map_hint"
+        android:visibility="gone" />
+
+    <!-- Метка в произвольной точке: её указывают нажатием прямо по карте -->
+    <Button
+        android:id="@+id/pickOnMapButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/pick_on_map_button"
+        android:layout_above="@id/backupButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp" />
+
     <!-- Резервная копия меток: выгрузка в файл и восстановление из него -->
     <Button
         android:id="@+id/backupButton"
