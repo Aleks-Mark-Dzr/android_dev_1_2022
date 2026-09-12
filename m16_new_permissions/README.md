@@ -156,4 +156,4 @@ APK появится в `app/build/outputs/apk/debug/app-debug.apk`.
 
 | Николай Фомин | Медвежий Край | Репка | Творчество из дерева | Ледяное творчество |
 |---|---|---|---|---|
-| <img src="screenshots/Николай Фомин.png" width="150" alt="Николай Фомин"> | <img src="screenshots/Медвежий край.png" width="150" alt="Медвежий край"> | <img src="screenshots/Репка.png" width="150" alt="Репка"><br><img src="screenshots/Творчество из дерева.png" width="150" alt="Творчество из дерева"> | <img src="screenshots/Ледяное творчество.png" width="150" alt="Леденое творчество"> |
+| <img src="screenshots/Николай Фомин.png" width="150" alt="Николай Фомин"> | <img src="screenshots/Медвежий край.png" width="150" alt="Медвежий край"> | <img src="screenshots/Репка.png" width="150" alt="Репка"> | <img src="screenshots/Творчество из дерева.png" width="150" alt="Творчество из дерева"> | <img src="screenshots/Ледяное творчество.png" width="150" alt="Леденое творчество"> |
