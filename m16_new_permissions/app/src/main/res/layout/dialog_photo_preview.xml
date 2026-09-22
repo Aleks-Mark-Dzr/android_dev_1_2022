@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Фото метки во весь диалог: открывается по нажатию на превью -->
-<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.example.m16_new_permissions.ui.map.ZoomableImageView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/previewImageView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

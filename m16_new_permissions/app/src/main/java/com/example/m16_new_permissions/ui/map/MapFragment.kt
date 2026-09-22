@@ -825,7 +825,7 @@ class MapFragment : Fragment() {
         var index = startIndex.coerceIn(paths.indices)
 
         val previewView = layoutInflater.inflate(R.layout.dialog_photo_preview, null)
-        val previewImageView = previewView.findViewById<ImageView>(R.id.previewImageView)
+        val previewImageView = previewView.findViewById<ZoomableImageView>(R.id.previewImageView)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(previewView)
             .setPositiveButton(R.string.action_close, null)
@@ -840,6 +840,7 @@ class MapFragment : Fragment() {
             }
 
             previewImageView.setImageBitmap(bitmap)
+            previewImageView.resetZoom()
             if (paths.size > 1) {
                 dialog.setTitle(getString(R.string.attraction_photo_position, index + 1, paths.size))
             }
